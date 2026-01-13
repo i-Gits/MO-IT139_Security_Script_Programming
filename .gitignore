@@ -1,0 +1,67 @@
+# Python basics
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.pyc
+
+# Environments & virtualenv
+.env
+.venv/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+*.whl
+
+# Testing & coverage
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# IDE / Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Tkinter / Desktop app specific
+*.ico~                  # temp icon files
+*.png~                  # temp images
+*.db-journal            # sqlite temp files
+*.log
+*.tmp
+
+# Security tool specific – NEVER commit these!
+data/reports/
+reports/
+scan_results/
+logs/
+dumps/
+keys/
+*.key
+*.pem
+*.der
+private/
+secrets/
+
+# Optional – if you use PyInstaller later
+*.spec
+onefile/
+onedir/
