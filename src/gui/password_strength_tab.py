@@ -104,11 +104,11 @@ class PasswordStrengthTab(tk.Frame):
                                  fg="white",
                                  font=("Segoe UI", 10, "bold"),
                                  relief="flat",
-                                 state="disabled",  # disabled until we have a password
+                                 state="disabled", 
                                  cursor="hand2")
         self.btn_save.pack(fill="x", pady=(10, 5))
 
-    # ── Strength checking logic ──
+    #Strength checking logic
     def check_password(self):
         password = self.entry_pass.get().strip()
 
@@ -124,7 +124,7 @@ class PasswordStrengthTab(tk.Frame):
         details_text = "\n".join(f"• {msg}" for msg in messages) if messages else "No issues found."
         self.label_details.config(text=details_text)
 
-    # ── Generation + Hashing logic ── (separate function as requested)
+    #Generation + Hashing logic
     def generate_and_display(self):
         """Generate a random password and display its hashes"""
         try:
@@ -163,7 +163,7 @@ class PasswordStrengthTab(tk.Frame):
             success = save_password(password, sha256_hash)
             if success:
                 messagebox.showinfo("Saved", "Password saved successfully to data/passwords.txt")
-                self.btn_save.config(state="disabled")  # optional: disable after save
-                # You could also clear or keep the display - your choice
+                self.btn_save.config(state="disabled") 
+              
             else:
                 messagebox.showerror("Save Failed", "Could not save the password. Check console for details.")
