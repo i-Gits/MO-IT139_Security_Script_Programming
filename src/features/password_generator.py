@@ -11,20 +11,14 @@ def generate_password():
 def generate_hashing(random_password):
     salt = os.urandom(16)
     sha256_hash = hashlib.sha256(salt + random_password.encode()).hexdigest()
-    md5_hash = hashlib.md5(salt + random_password.encode()).hexdigest()
-    return sha256_hash, md5_hash
+    return sha256_hash
+
+def generate_and_hash_password():
+    random_password = generate_password()
+    sha256_hash = generate_hashing(random_password)
+    salt_hex = os.urandom(16).hex()
+    return random_password, sha256_hash, salt_hex
 
 
 
 
-
-
-
-print("Generating a random password...")
-
-password = generate_password()
-print("Generated Password:", password)
-
-sha256_hash, md5_hash = generate_hashing(password)
-print("SHA256 Hash:", sha256_hash)
-print("MD5 Hash:", md5_hash)

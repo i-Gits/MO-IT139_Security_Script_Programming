@@ -7,7 +7,7 @@ from gui.password_strength_tab import PasswordStrengthTab
 def main():
     root = tk.Tk()
     root.title("PASSECURIST - Security Toolkit")
-    root.geometry("580x650")
+    root.geometry("590x1000")
     root.configure(bg="#0f172a")
 
     # Simple notebook with minimal styling
@@ -16,7 +16,7 @@ def main():
 
     # Password Strength tab 
     tab_strength = tk.Frame(notebook, bg="#0f172a")
-    notebook.add(tab_strength, text="Password Strength")
+    notebook.add(tab_strength, text="Password Strength Analyzer and Generator")
 
     PasswordStrengthTab(tab_strength)
 
