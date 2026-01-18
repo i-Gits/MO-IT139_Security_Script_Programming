@@ -48,10 +48,10 @@ WEAK: ≤4 points OR any veto triggered
 Generated Password File Format
 Passwords are saved to passwords.txt in this format:
 
-Timestamp: 2026-01-18 14:30:45
-Password: aB3$xYz9KlMn
-Salt: 3f7a2b1c9d8e5f4a3b2c1d0e9f8a7b6c
-Hash: 5d41402abc4b2a76b9719d911017c592...
+- Timestamp: 2026-01-18 14:30:45
+- Password: aB3$xYz9KlMn
+- Salt: 3f7a2b1c9d8e5f4a3b2c1d0e9f8a7b6c
+- Hash: 5d41402abc4b2a76b9719d911017c592...
 --------------------------------------------------
 
 How to run:
