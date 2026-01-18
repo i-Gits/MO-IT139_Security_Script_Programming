@@ -1,27 +1,20 @@
-# src/main.py
-import tkinter as tk
-from tkinter import ttk
+# Entry point for the Password Security Toolkit (HW #1 & 2)
 
-from gui.password_strength_tab import PasswordStrengthTab
+import tkinter as tk
+from gui.main_menu import MainMenu
 
 def main():
+    """Launch the Password Security Toolkit"""
     root = tk.Tk()
-    root.title("PASSECURIST - Security Toolkit")
-    root.geometry("580x650")
+    root.title("Password Security Toolkit")
+    root.geometry("600x500")
     root.configure(bg="#0f172a")
-
-    # Simple notebook with minimal styling
-    notebook = ttk.Notebook(root)
-    notebook.pack(fill="both", expand=True, padx=10, pady=10)
-
-    # Password Strength tab 
-    tab_strength = tk.Frame(notebook, bg="#0f172a")
-    notebook.add(tab_strength, text="Password Strength")
-
-    PasswordStrengthTab(tab_strength)
-
+    root.resizable(False, False)
+    
+    # Create and display main menu
+    MainMenu(root)
+    
     root.mainloop()
-
 
 if __name__ == "__main__":
     main()

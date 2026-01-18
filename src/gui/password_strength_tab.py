@@ -1,112 +1,104 @@
+# Password strength analyzer window
+
 import tkinter as tk
-from tkinter import ttk
+from tkinter import Frame, Label, Entry, Button, messagebox, Toplevel
 from features.password_strength import evaluate_password_strength
 
-# ── Theme colors (your original hackerist style) ──
-BG_COLOR = "#0f172a"       # slate-900
-CARD_COLOR = "#1e293b"     # slate-800
-TEXT_MAIN = "#e2e8f0"      # light grey
-ACCENT_COLOR = "#38bdf8"   # sky blue
-BTN_HOVER = "#0ea5e9"
-COLOR_WEAK = "#ef4444"
-COLOR_MOD = "#f59e0b"
-COLOR_STRONG = "#22c55e"
+# Theme colors
+BG_COLOR = "#0f172a"
+CARD_COLOR = "#1e293b"
+TEXT_MAIN = "#e2e8f0"
+ACCENT_COLOR = "#38bdf8"
 
-COLOR_MAP = {
-    "WEAK": COLOR_WEAK,
-    "MODERATE": COLOR_MOD,
-    "STRONG": COLOR_STRONG
-}
-
-class PasswordStrengthTab(tk.Frame):  # ← using tk.Frame instead of ttk for easier bg control
-    def __init__(self, parent):
-        super().__init__(parent, bg=BG_COLOR)
-        self.pack(fill="both", expand=True, padx=20, pady=20)
-
-        # ── Header ──
-        frame_header = tk.Frame(self, bg=BG_COLOR, pady=20)
+class PasswordStrengthWindow:
+    """Password strength analyzer window"""
+    
+    def __init__(self, main_window):
+        self.main_window = main_window
+        self.window = Toplevel()
+        self.setup_window()
+        self.create_ui()
+    
+    def setup_window(self):
+        """Configure window settings"""
+        self.window.title("Password Strength Analyzer")
+        self.window.geometry("600x650")
+        self.window.configure(bg=BG_COLOR)
+        self.window.resizable(False, False)
+        self.window.protocol("WM_DELETE_WINDOW", self.on_close)
+    
+    def create_ui(self):
+        """Create UI components"""
+        # Header
+        frame_header = Frame(self.window, bg=BG_COLOR, pady=20)
         frame_header.pack(fill="x")
-
-        tk.Label(frame_header,
-                 text="PASSECURIST",
-                 font=("Segoe UI", 22, "bold"),
-                 fg=ACCENT_COLOR,
-                 bg=BG_COLOR).pack()
-
-        tk.Label(frame_header,
-                 text="Password Strength Analyzer",
-                 font=("Segoe UI", 10),
-                 fg=TEXT_MAIN,
-                 bg=BG_COLOR).pack()
-
-        # ── Input area ──
-        frame_input = tk.Frame(self, bg=CARD_COLOR, padx=30, pady=25)
-        frame_input.pack(fill="x", pady=10)
-
-        tk.Label(frame_input,
-                 text="Enter Password:",
-                 font=("Segoe UI", 11),
-                 fg=TEXT_MAIN,
-                 bg=CARD_COLOR).pack(anchor="w")
-
-        self.entry_pass = tk.Entry(frame_input,
-                                   font=("Consolas", 13),
-                                   bg="#334155",
-                                   fg="white",
-                                   insertbackground="white",
-                                   relief="flat")
+        
+        Label(frame_header, text="PASSECURIST", 
+              font=("Segoe UI", 22, "bold"), fg=ACCENT_COLOR, bg=BG_COLOR).pack()
+        Label(frame_header, text="Password Strength Analyzer", 
+              font=("Segoe UI", 10), fg=TEXT_MAIN, bg=BG_COLOR).pack()
+        
+        # Input area
+        frame_input = Frame(self.window, bg=CARD_COLOR, padx=30, pady=25)
+        frame_input.pack(fill="x", pady=10, padx=20)
+        
+        Label(frame_input, text="Enter Password:", 
+              font=("Segoe UI", 11), fg=TEXT_MAIN, bg=CARD_COLOR).pack(anchor="w")
+        
+        self.entry_pass = Entry(frame_input, font=("Consolas", 13),
+                               bg="#334155", fg="white", insertbackground="white", relief="flat")
         self.entry_pass.pack(pady=12, ipady=6, fill="x")
-
-        self.btn_check = tk.Button(frame_input,
-                                   text="ANALYZE PASSWORD STRENGTH",
-                                   command=self.check_password,
-                                   bg=ACCENT_COLOR,
-                                   fg="#0f172a",
-                                   font=("Segoe UI", 10, "bold"),
-                                   relief="flat",
-                                   activebackground=BTN_HOVER,
-                                   cursor="hand2")
-        self.btn_check.pack(fill="x", pady=8)
-
-        # Enter key support
+        
+        btn_check = Button(frame_input, text="ANALYZE PASSWORD STRENGTH",
+                          command=self.check_password,
+                          bg=ACCENT_COLOR, fg=BG_COLOR,
+                          font=("Segoe UI", 10, "bold"),
+                          relief="flat", cursor="hand2")
+        btn_check.pack(fill="x", pady=8)
+        
+        # Enter key binding
         self.entry_pass.bind("<Return>", lambda e: self.check_password())
-        self.after(100, lambda: self.entry_pass.focus_set())
-
-        # ── Result area ──
-        frame_result = tk.Frame(self, bg=BG_COLOR, padx=20, pady=20)
+        self.entry_pass.focus_set()
+        
+        # Result area
+        frame_result = Frame(self.window, bg=BG_COLOR, padx=20, pady=20)
         frame_result.pack(fill="both", expand=True)
-
-        self.label_rating = tk.Label(frame_result,
-                                     text="VERDICT: WAITING...",
-                                     font=("Segoe UI", 16, "bold"),
-                                     fg="#64748b",
-                                     bg=BG_COLOR)
+        
+        self.label_rating = Label(frame_result, text="VERDICT: WAITING...",
+                                 font=("Segoe UI", 16, "bold"),
+                                 fg="#64748b", bg=BG_COLOR)
         self.label_rating.pack(pady=(0, 15))
-
+        
         # Separator
-        tk.Frame(frame_result, height=2, bg=CARD_COLOR).pack(fill="x", pady=10)
-
-        self.label_details = tk.Label(frame_result,
-                                      text="Enter a password to begin analysis.",
-                                      font=("Segoe UI", 10),
-                                      fg="#94a3b8",
-                                      bg=BG_COLOR,
-                                      justify="left",
-                                      wraplength=420)
+        Frame(frame_result, height=2, bg=CARD_COLOR).pack(fill="x", pady=10)
+        
+        self.label_details = Label(frame_result, text="Enter a password to begin analysis.",
+                                   font=("Segoe UI", 10), fg="#94a3b8", bg=BG_COLOR,
+                                   justify="left", wraplength=420)
         self.label_details.pack(anchor="w", pady=10)
-
+        
+        # Back button
+        btn_back = Button(self.window, text="BACK TO MENU", command=self.on_close,
+                         font=("Segoe UI", 10), bg=CARD_COLOR, fg=TEXT_MAIN,
+                         relief="flat", cursor="hand2")
+        btn_back.pack(pady=20, padx=20, fill="x")
+    
     def check_password(self):
+        """Analyze password strength"""
         password = self.entry_pass.get().strip()
-
+        
         if not password:
-            tk.messagebox.showwarning("Input Required", "Please enter a password")
+            messagebox.showwarning("Input Required", "Please enter a password")
             return
-
-        rating, color_name, messages = evaluate_password_strength(password)
-
-        color = COLOR_MAP.get(rating, "#64748b")
-
+        
+        rating, color, messages = evaluate_password_strength(password)
+        
         self.label_rating.config(text=f"VERDICT: {rating}", fg=color)
-
+        
         details_text = "\n".join(f"• {msg}" for msg in messages) if messages else "No issues found."
         self.label_details.config(text=details_text)
+    
+    def on_close(self):
+        """Handle window close - return to main menu"""
+        self.window.destroy()
+        self.main_window.deiconify()
