@@ -1,4 +1,5 @@
 import re
+import string
 from utils.dictionary import DICTIONARY_WORDS
 
 COMMON_PASSWORDS = {
@@ -23,7 +24,7 @@ def evaluate_password_strength(password: str) -> tuple[str, str, list[str]]:
         (re.search(r"[A-Z]", password), "No uppercase letter"),
         (re.search(r"[a-z]", password), "No lowercase letter"),
         (re.search(r"[0-9]", password), "No number"),
-        (re.search(r'[!@#$%^&*()_+\-=\[\]{};:\"\',.<>/?\\|]', password), "No special character")
+        (re.search(string.punctuation, password), "No special character")
     ]
 
     for passed, msg in checks:

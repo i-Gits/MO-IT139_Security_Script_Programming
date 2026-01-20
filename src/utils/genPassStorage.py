@@ -9,7 +9,7 @@ def ensure_data_dir():
     """Create data directory if it doesn't exist"""
     os.makedirs(DATA_DIR, exist_ok=True)
 
-def save_password(password: str, sha256_hash: str, note: str = "") -> bool:
+def save_password(sha256_hash: str, note: str = "") -> bool:
     """
     Append password to file with timestamp
     Returns True if saved successfully
@@ -18,7 +18,7 @@ def save_password(password: str, sha256_hash: str, note: str = "") -> bool:
         ensure_data_dir()
         
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        line = f"[{timestamp}] {password} |  {sha256_hash}"
+        line = f"[{timestamp}] |  {sha256_hash}"
         if note:
             line += f"  # {note}"
         line += "\n"

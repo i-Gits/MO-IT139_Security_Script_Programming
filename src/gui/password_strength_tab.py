@@ -130,7 +130,7 @@ class PasswordStrengthTab(tk.Frame):
         try:
             password, sha256_hash, salt_hex = generate_and_hash_password()
 
-            self.current_generated_password = (password, sha256_hash)
+            self.current_generated_password = (sha256_hash)
 
             output = f"Generated Password:\n{password}\n\n"
             output += f"SHA-256 (salted):\n{sha256_hash}\n\n"
@@ -149,18 +149,17 @@ class PasswordStrengthTab(tk.Frame):
             messagebox.showwarning("No Password", "Generate a password first!")
             return
 
-        password, sha256_hash = self.current_generated_password
+        sha256_hash = self.current_generated_password
 
         confirm = messagebox.askyesno(
             "Confirm Save",
             f"Save this entry?\n\n"
-            f"Password: {password}\n"
             f"SHA-256: {sha256_hash[:16]}...\n" 
             "Note: This is plain text storage!"
         )
 
         if confirm:
-            success = save_password(password, sha256_hash)
+            success = save_password(sha256_hash)
             if success:
                 messagebox.showinfo("Saved", "Password saved successfully to data/passwords.txt")
                 self.btn_save.config(state="disabled") 
