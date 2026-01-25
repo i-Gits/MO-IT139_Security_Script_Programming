@@ -1,4 +1,4 @@
-# Password generator window with hashing and verification
+# GUI: Password generator window with hashing and verification
 
 import tkinter as tk
 from tkinter import Frame, Label, Button, StringVar, messagebox, Text, Scrollbar, Entry, Toplevel, END
@@ -115,7 +115,8 @@ class PasswordGeneratorWindow:
             salt, hashed = hash_password(password)
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             
-            if save_to_file(password, salt, hashed, timestamp):
+            # Save ONLY hash and salt (not the raw password for security)
+            if save_to_file(salt, hashed, timestamp):
                 # Display results
                 self.display_text.delete(1.0, END)
                 self.display_text.insert(END, "=" * 50 + "\n", "center")
@@ -125,18 +126,26 @@ class PasswordGeneratorWindow:
                 self.display_text.insert(END, f"PASSWORD: {password}\n\n", "password")
                 self.display_text.insert(END, f"SHA-256 HASH:\n{hashed}\n\n", "hash")
                 self.display_text.insert(END, f"Generated: {timestamp}\n\n", "info")
-                self.display_text.insert(END, "✓ SAVED TO FILE!\n", "success")
-                self.display_text.insert(END, "Check passwords.txt for complete entry.\n", "info")
+                self.display_text.insert(END, "⚠ WARNING ⚠\n", "warning")
+                self.display_text.insert(END, "This password is NOT saved!\n", "warning")
+                self.display_text.insert(END, "Copy it now before closing.\n\n", "warning")
+                self.display_text.insert(END, "✓ Hash saved to file for verification.\n", "success")
                 
                 # Configure text styling
                 self.display_text.tag_config("header", foreground=ACCENT_COLOR, font=("Segoe UI", 14, "bold"), justify="center")
                 self.display_text.tag_config("password", foreground="#22c55e", font=("Consolas", 12, "bold"), justify="center")
                 self.display_text.tag_config("hash", foreground="#f59e0b", font=("Consolas", 9), justify="center")
+                self.display_text.tag_config("warning", foreground="#ef4444", font=("Segoe UI", 10, "bold"), justify="center")
                 self.display_text.tag_config("success", foreground="#22c55e", font=("Segoe UI", 11, "bold"), justify="center")
                 self.display_text.tag_config("info", foreground=TEXT_MAIN, font=("Segoe UI", 9), justify="center")
                 self.display_text.tag_config("center", justify="center")
                 
-                messagebox.showinfo("Success", "Password generated and saved!")
+                # Show warning popup
+                messagebox.showwarning("⚠ COPY PASSWORD NOW!", 
+                    f"Password: {password}\n\n"
+                    "⚠ This password is NOT saved to file!\n"
+                    "Copy it now before closing this window.\n\n"
+                    "Only the hash is saved for verification.")
         
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {str(e)}")
@@ -214,6 +223,6 @@ class PasswordGeneratorWindow:
         cancel_btn.pack(fill="x", pady=(5, 0))
     
     def on_close(self):
-        """Handle window close - return to main menu"""
+        """Returns you to main menu"""
         self.window.destroy()
         self.main_window.deiconify()

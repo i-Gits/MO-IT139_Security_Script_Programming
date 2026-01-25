@@ -1,4 +1,4 @@
-# Entry point for the Password Security Toolkit (HW #1 & 2)
+# Entry point for the Password Security Toolkit (HW #1, 2, 3)
 
 import tkinter as tk
 from gui.main_menu import MainMenu

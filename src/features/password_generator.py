@@ -10,7 +10,7 @@ OUTPUT_FILE = "passwords.txt"
 def generate_password(length):
     """
     Generate random password with required character types.
-    Guarantees: 1 uppercase, 1 lowercase, 1 digit, 1 special char.
+    Guarantees: 1 uppercase, 1 lowercase, 1 digit, 1 special charr
     """
     uppercase = string.ascii_uppercase
     lowercase = string.ascii_lowercase
@@ -30,26 +30,24 @@ def generate_password(length):
     remaining_length = length - 4
     password.extend(random.choices(all_chars, k=remaining_length))
     
-    # Shuffle to avoid predictable   patterns
+    # Shuffles to avoid predictable patterns
     random.shuffle(password)
     
     return ''.join(password)
 
 def hash_password(password):
     """
-    Create SHA-256 hash with random salt.
-    Returns: (salt_hex, hashed)
+    Create SHA-256 hash with random salt
     """
     salt = os.urandom(16)
     hashed = hashlib.sha256(salt + password.encode('utf-8')).hexdigest()
     salt_hex = salt.hex()
     return salt_hex, hashed
 
-def save_to_file(password, salt, hashed, timestamp):
-    """Save password, salt, and hash to file"""
+def save_to_file(salt, hashed, timestamp):
+    """Save ONLY salt and hash to file (NO password stored)"""
     try:
         entry = f"Timestamp: {timestamp}\n"
-        entry += f"Password: {password}\n"
         entry += f"Salt: {salt}\n"
         entry += f"Hash: {hashed}\n"
         entry += "-" * 50 + "\n\n"
@@ -86,14 +84,12 @@ def load_password_entries():
             for line in lines:
                 if line.startswith("Timestamp:"):
                     entry['timestamp'] = line.replace("Timestamp:", "").strip()
-                elif line.startswith("Password:"):
-                    entry['password'] = line.replace("Password:", "").strip()
                 elif line.startswith("Salt:"):
                     entry['salt'] = line.replace("Salt:", "").strip()
                 elif line.startswith("Hash:"):
                     entry['hash'] = line.replace("Hash:", "").strip()
             
-            if 'password' in entry and 'salt' in entry and 'hash' in entry:
+            if 'salt' in entry and 'hash' in entry:
                 entries.append(entry)
         
         return entries
@@ -105,7 +101,7 @@ def load_password_entries():
 def verify_password_hash(password, entries):
     """
     Verify password against saved hashes.
-    Returns: timestamp if match found, None otherwise
+    Returns: timestamp if match found, else None
     """
     for entry in entries:
         try:

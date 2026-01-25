@@ -18,14 +18,6 @@ def evaluate_password_strength(password):
     """
     Evaluate password strength based on structural and veto checks.
     
-    Args:
-        password: The password string to evaluate
-    
-    Returns:
-        tuple: (rating, color, feedback_messages)
-            - rating: "WEAK", "MODERATE", or "STRONG"
-            - color: hex color code for display
-            - feedback_messages: list of feedback strings
     """
     if not password:
         return "WEAK", COLOR_WEAK, ["Please enter a password before checking."]
