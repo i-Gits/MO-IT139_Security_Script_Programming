@@ -1,116 +1,329 @@
 # Documentation
 
-### load_dictionary()
+## Password Strength Analyzer
 
-Purpose: Loads a local dictionary file (dictionary.txt) into a Python list used to detect words inside passwords.
- (reads a file in the same folder).
-list of words (lowercase) keeps words with length >= 4
-Reads a word list from disk so the app can check if a password contains common words like ‘apple’ or ‘secret’
-it prints debug messages and returns a small fallback list when dictionary.txt is missing
+### load_dictionary()
+**Purpose**: Loads a local dictionary file (dictionary.txt) into a Python list used to detect words inside passwords.
+
+**Parameters**: None
+
+**Returns**: List of words (lowercase) with length >= 4
+
+**Details**: 
+- Reads dictionary.txt from the data folder
+- Filters words to keep only those with 4+ characters
+- Prints debug messages and returns a small fallback list when dictionary.txt is missing
+- Fallback words: ["apple", "computer", "dragon", "monkey", "secret"]
+
+---
 
 ### load_nltk_words(min_len=4, max_len=None)
- >>>>> adds more dictionary words from NLTK so the password checks are more thorough.
+**Purpose**: Loads words from the NLTK corpus (if installed) and returns them filtered by length.
 
-Purpose: Loads words from the NLTK corpus (if installed) and returns them filtered by length.
- min_len (default 4), max_len (none)
-list of corpus words in lowercase meeting length rules
-> If nltk is not installed the script will/might crash 
-or it should return [] if the corpus isn't installed? idea is the code checks for the corpus word db without downloading it.
- [TO DO: CHECK]
+**Parameters**:
+- `min_len` (int, default=4): Minimum word length
+- `max_len` (int or None): Maximum word length (None = no limit)
 
-with the current file, we import nltk unguarded at top 
-> 1. if nltk is not installed the script will crash before load_nltk_words runs
-  > a. either guard the import or
-  > b. just state retain and ADD warning "current code will crash if nltk is not installed." 
-Will have to "guard" the import in the future for imrpovment
+**Returns**: List of corpus words in lowercase meeting length rules
 
+**Notes**:
+- Returns empty list [] if NLTK is not installed or corpus is missing
+- Does not automatically download corpus
+- Current implementation: `nltk` is imported at the top (unguarded)
+  - **Warning**: Code will crash if nltk is not installed
+  - Future improvement: Guard the import for better error handling
+
+---
+
+### evaluate_password_strength(password)
+**Purpose**: Main password assessment function that tests password strength and provides detailed feedback.
+
+**Parameters**:
+- `password` (str): The password to evaluate
+
+**Returns**: Tuple of (rating, color, messages)
+- `rating` (str): "WEAK", "MODERATE", or "STRONG"
+- `color` (str): Hex color code for UI display
+- `messages` (list): List of feedback strings
+
+**Evaluation Logic**:
+
+#### Structural Checks (5 points)
+1. Length >= 12 characters
+2. Contains uppercase letter
+3. Contains lowercase letter
+4. Contains digits
+5. Contains special characters (punctuation)
+
+#### Veto Checks (2 bonus points)
+1. Not in COMMON_PASSWORDS list (exact match, case-insensitive)
+2. Does not contain any DICTIONARY_WORDS (case-insensitive substring check)
+
+**Scoring System**:
+- Maximum score: 7 points (5 structural + 2 veto bonuses)
+- **STRONG**: No veto triggers AND score = 7
+- **MODERATE**: No veto triggers AND score = 5-6
+- **WEAK**: Veto triggered OR score <= 4
+
+**Special Behaviors**:
+- Veto checks override structural score (common password or dictionary word = automatic WEAK)
+- Detected dictionary words are printed to terminal for debugging
+- Case-insensitive matching for both common passwords and dictionary words
+- Returns early with warning if input is empty
+
+**Where Used**: 
+- Button command in GUI
+- Enter key binding for quick analysis
+
+---
 
 ### show_custom_warning(title, message)
+**Purpose**: Display a custom-themed modal warning window.
 
->>>>> A custom popup that matches the app style and tells the user something is wrong.
+**Parameters**:
+- `title` (str): Window title
+- `message` (str): Warning message to display
 
-Purpose: Show a small themed modal warning window  
- title (string), message (string).
- (displays popup) 
-> So it opens a blocking popup that uses the app’s dark theme
-> Called when the user submits empty input (evaluate_password)
+**Returns**: None (displays popup)
 
-### evaluate_password()
->>>>>  This is the main checker: it tests password, warns if it’s a known/common password or contains real words, and shows Weak/Moderate/Strong plus tips for a better password.
-main password assessor
+**Details**:
+- Creates a blocking popup using the app's dark blue theme
+- Matches main application styling
+- Called when user submits empty input in evaluate_password_strength()
 
-updates GUI widgets label_rating and label_details with a verdict and feedback.
-Returns early with warning if input empty.
+---
 
-## Runs Structural checks (5) 
-1. length >= 12
-2. has uppercase
-3. lowercase
-4. digits
-5. symbols
+## Password Generator & Hasher
 
-## and separately Veto checks (2) 
-> common passwords and dictionary-word containment 
-1. Checks exact common passwords list and
-2. Ceheck if any dictionary word appears inside the password
+### generate_password(length=12)
+**Purpose**: Generate a cryptographically secure password.
 
-WHERE
-"Structural checks" = tests of the password's shape (length, uppercase, lowercase, digits, symbols). measure how the password is built.
-"Veto checks" = rules that immediately mark the password WEAK regardless of score (common password or contains a real dictionary word). They “veto” a good score basically.
-   
-*Score totals up to 7; then chooses final verdict:*
+**Parameters**:
+- `length` (int, default=12): Desired password length (clamped to 8-16)
 
-1. Weak if common or contains dictionary word OR score <= 4
-2. Moderate if score 5–6
-3. Strong otherwise
+**Returns**: String containing generated password
 
-> 5 structural checks + 2 hidden checks (not common + not dictionary) total max 7.
-> 1. Strong requires no veto and effectively score == 7
-> 2. moderate is score 5–6
-> 3. weak is automatic if veto or score <= 4
+**Details**:
+- Ensures at least one character from each class: uppercase, lowercase, digit, punctuation
+- Remaining characters randomly selected from all classes
+- Final password is shuffled for randomness
+- Length automatically adjusted if below 8 or above 16
 
+---
 
-**Shows details and colored verdict.**
-Prints detected dictionary words to terminal (debug)
-Where used: button command and Enter binding.
+### hash_password(password)
+**Purpose**: Hash a password using SHA-256 with random salt.
 
+**Parameters**:
+- `password` (str): Password to hash
 
-## Other notes
+**Returns**: Tuple of (salt_hex, hash_hex)
+- `salt_hex` (str): 16-byte salt as hex string
+- `hash_hex` (str): SHA-256 hash as hex string
 
-#### the function does a case-insensitive check for COMMON_PASSWORDS (it compares pwd.lower()) and 
-#### checks dictionary words against pwd.lower() too.
+**Details**:
+- Generates 16-byte random salt using os.urandom()
+- Prepends salt to password before hashing
+- Returns both salt and hash (both needed for verification)
 
-DICTIONARY_WORDS: combined list from load_dictionary() + load_nltk_words(), deduplicated and sorted. Used to find dictionary words inside a password.
-NOTEE: (on performance) if DICTIONARY_WORDS becomes large (NLTK), the loop that checks "if word in pwd.lower()" will be slower
+---
 
-COMMON_PASSWORDS: a short hardcoded list of very common passwords that immediately mark a password weak.
-Color constants: used to color-code the verdict in the GUI.
-Enter binding: root.bind_all("<Return>", ...) *"invokes"* the Analyze button so users can press Enter to run the check easily!
+### save_to_file(salt_hex, hash_hex, timestamp, password=None)
+**Purpose**: Save hash entry to file (password parameter is NOT saved).
 
+**Parameters**:
+- `salt_hex` (str): Salt in hexadecimal
+- `hash_hex` (str): Hash in hexadecimal
+- `timestamp` (str): Timestamp string
+- `password` (str, optional): NOT SAVED - only used for validation
 
+**Returns**: Boolean (True if saved successfully)
 
-### Version 1
+**File Format**: `[timestamp] | hash # salt`
 
-1. Dark blue themed GUI (To start application function, must click button)
-2. Veto logic in evaluate_password: if the password is in COMMON_PASSWORDS or contains a dictionary word, the password becomes WEAK immediately >> helps catch poor passwords that look complex but include real words.
-3. No NLTK integration.
-4. Custom modal popup; white default theme.
-5. 7 rule scoring
+**Security**: Raw password is NEVER written to disk, only hash and salt are stored.
 
-6. Debug printing of detected dictionary words: helps trace why a password was flagged.
- only for debugging and not shown in the GUI.
+---
 
-### Version 2
-ADDED / Configured
+## Web Form Validator & Sanitizer
 
-1. With NLTK integration --- Optional NLTK corpus loader (load_nltk_words): [ expands dictionary coverage when available ]
-2. Custom modal popup; dark blue custom theme consistent with main GUI.
-3. Dictionary-based checks 
-Local dictionary loader (load_dictionary): lets the app detect real words inside passwords 
-4. Combined structural checks + veto checks give a more nuanced result (Weak/Moderate/Strong).
-#### Custom themed pop-up warning: consistent UI style and clearer user messaging.
-#### Enter key binding: improves usability (press Enter to run analysis).
+### validate_full_name(name)
+**Purpose**: Validate full name field with security checks.
 
+**Returns**: Tuple of (valid, message, details)
 
-Previously: local file only, pop-up message GUI is white
-Current: local file and NTLTK, Pop-up message GUI now matches dark blue theme as main GUI
+**Validation Rules**:
+- Required field (min 1 character after strip)
+- Minimum 2 characters
+- No digits allowed
+- Only letters, spaces, apostrophes, hyphens
+- Maximum 2 consecutive spaces
+
+---
+
+### validate_email(email)
+**Purpose**: Validate email address with RFC 5321 compliance and security checks.
+
+**Returns**: Tuple of (valid, message, details)
+
+**Validation Rules**:
+- Required field
+- Length: 6-320 characters
+- No spaces allowed
+- Must contain exactly one '@' symbol
+- Local part (before @): max 64 chars, alphanumeric start/end, allows ._+-
+- Domain part (after @): must have dot, valid TLD (2-63 chars, letters only)
+- Blocks disposable email domains
+- No consecutive dots in local or domain parts
+
+**Reference**: https://whoapi.com/blog/understanding-valid-email-address-formats-a-short-guide/
+
+---
+
+### validate_username(username)
+**Purpose**: Validate username with security and format checks.
+
+**Returns**: Tuple of (valid, message, details)
+
+**Validation Rules**:
+- Required field
+- Length: 4-16 characters
+- Must start with letter (not number)
+- No spaces allowed
+- Only letters, numbers, underscores
+- No consecutive underscores
+
+---
+
+### validate_message(message)
+**Purpose**: Validate message with XSS and SQL injection detection.
+
+**Returns**: Tuple of (valid, message, details, threats)
+
+**Validation Rules**:
+- Required field
+- Maximum 250 characters
+- Blocks SQL keywords: SELECT, DROP, INSERT, DELETE, UPDATE, UNION, etc.
+- Blocks XSS patterns: `<script>`, `<iframe>`, `javascript:`, event handlers
+- Blocks admin panel references: admin, login, wp-admin, phpmyadmin
+
+---
+
+### sanitize_* functions
+**Purpose**: Clean and normalize input for safe database storage.
+
+**Functions**:
+- `sanitize_full_name(name)`: Removes digits and invalid chars, formats to Title Case
+- `sanitize_email(email)`: Removes spaces, normalizes to lowercase
+- `sanitize_username(username)`: Removes invalid chars, normalizes to lowercase
+- `sanitize_message(message)`: 9-layer sanitization (removes scripts, HTML entities, SQL keywords)
+
+**Returns**: Tuple of (sanitized_value, was_sanitized)
+
+---
+
+### validate_and_sanitize_form(form_data)
+**Purpose**: Main validation function for all form fields.
+
+**Parameters**:
+- `form_data` (dict): Dictionary with keys: full_name, email, username, message
+
+**Returns**: Dictionary containing:
+- `validation`: Per-field validation results
+- `sanitized`: Sanitized values for each field
+- `errors`: List of error messages
+- `summary`: List of sanitization actions
+- `all_valid`: Boolean overall validity
+- `has_empty_fields`: Boolean if required fields missing
+
+---
+
+## Global Variables
+
+### DICTIONARY_WORDS
+Combined list from `load_dictionary()` + `load_nltk_words()`, deduplicated and sorted.
+
+**Usage**: Used to find dictionary words inside passwords
+
+**Performance Note**: Large NLTK corpus may slow down password checking due to substring matching loop
+
+---
+
+### COMMON_PASSWORDS
+Short hardcoded list of very common passwords that immediately mark a password as weak.
+
+**Examples**: "password", "123456", "qwerty", "admin", "letmein"
+
+---
+
+### Color Constants
+Used to color-code verdicts in the GUI:
+- `COLOR_WEAK = "#ef4444"` (red)
+- `COLOR_MOD = "#f59e0b"` (orange)
+- `COLOR_STRONG = "#22c55e"` (green)
+
+---
+
+### SQL_KEYWORDS
+List of SQL keywords to detect injection attempts in messages.
+
+---
+
+### DANGEROUS_PATTERNS
+Regex patterns to detect XSS and malicious code in messages.
+
+---
+
+### DISPOSABLE_DOMAINS
+List of temporary/disposable email service domains to block.
+
+---
+
+## GUI Features
+
+### Enter Key Binding
+`root.bind_all("<Return>", ...)` allows users to press Enter to trigger password analysis without clicking the button.
+
+---
+
+### Conditional Scrollbars
+Scrollbars appear only when content exceeds the visible area:
+- Message input field (web validator)
+- Password generator results
+- Password strength details
+- Form validation results
+
+---
+
+### Inline Validation Feedback
+Web form validator shows:
+- ✓ Valid (green) - Field passes all checks
+- ⚠ Sanitized (orange) - Field was cleaned
+- ✗ Error (red) - Lists ALL violations separated by bullets (•)
+
+---
+
+## Version History
+
+### Version 1.0
+- Dark blue themed GUI (button-click to analyze)
+- Veto logic for common passwords and dictionary words
+- No NLTK integration
+- Custom modal popup with white default theme
+- 7-rule scoring system
+- Debug printing of detected dictionary words
+
+### Version 2.0 (Current)
+**Added/Configured**:
+- NLTK integration (optional corpus loader expands dictionary coverage)
+- Custom modal popup with dark blue theme (matches main GUI)
+- Password Generator & Hasher tab
+- Web Form Validator & Sanitizer tab
+- Text Encryptor/Decryptor tab
+- Dictionary-based password checks (local + NLTK)
+- Combined structural + veto checks for nuanced results
+- Enter key binding for improved usability
+- Conditional scrollbars across all tabs
+- Inline validation showing ALL violations per field
+- Green success indicators for valid fields
+- Sanitization summaries with detailed notes

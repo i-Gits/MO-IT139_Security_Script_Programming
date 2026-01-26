@@ -13,7 +13,7 @@ def main():
     root.title("PASSECURIST - Security Toolkit")
     root.geometry("640x920")
 
-    # Apply theme (this should now style tabs correctly)
+    # App theme
     AppTheme.apply(root)
 
     # Notebook

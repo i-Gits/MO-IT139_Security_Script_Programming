@@ -1,3 +1,4 @@
+# gui/styles.py
 import tkinter.ttk as ttk
 class AppTheme:
     BG = "#0f172a"
