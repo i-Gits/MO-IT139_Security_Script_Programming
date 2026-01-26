@@ -3,21 +3,28 @@ import os
 import random
 import string
 
-def generate_password():
-    length = random.randint(8, 16)
-    random_password = ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase + string.digits + string.punctuation, k=length))
-    return random_password
+def generate_password(min_len=12, max_len=16):
+    # Ensure password length at least min_len and contains at least one char from each class
+    length = random.randint(min_len, max_len)
+    classes = [
+        random.choice(string.ascii_uppercase),
+        random.choice(string.ascii_lowercase),
+        random.choice(string.digits),
+        random.choice(string.punctuation),
+    ]
+    if length < len(classes):
+        length = len(classes)
+    remaining = random.choices(string.ascii_letters + string.digits + string.punctuation,
+                               k=length - len(classes))
+    pwd_list = classes + remaining
+    random.shuffle(pwd_list)
+    return ''.join(pwd_list)
 
-def generate_hashing(random_password):
+def generate_and_hash_password(min_len=12, max_len=16):
+    pwd = generate_password(min_len, max_len)
     salt = os.urandom(16)
-    sha256_hash = hashlib.sha256(salt + random_password.encode()).hexdigest()
-    return sha256_hash
-
-def generate_and_hash_password():
-    random_password = generate_password()
-    sha256_hash = generate_hashing(random_password)
-    salt_hex = os.urandom(16).hex()
-    return random_password, sha256_hash, salt_hex
+    sha256_hash = hashlib.sha256(salt + pwd.encode('utf-8')).hexdigest()
+    return pwd, sha256_hash, salt.hex()
 
 
 

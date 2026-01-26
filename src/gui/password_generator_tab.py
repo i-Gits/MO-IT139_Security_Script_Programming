@@ -38,6 +38,23 @@ class PasswordGeneratorTab(tk.Frame):
                                    bg="#1e293b", fg=TEXT_MAIN, wrap="word", relief="flat")
         self.result_text.pack(fill="x", pady=12)
 
+        # Copy buttons for convenience
+        copy_frame = tk.Frame(frame, bg=CARD_COLOR)
+        copy_frame.pack(fill="x", pady=(0, 8))
+
+        def copy_output():
+            content = self.result_text.get("1.0", tk.END).strip()
+            if not content:
+                messagebox.showwarning("Nothing to copy", "Generate a password first")
+                return
+            root = self.winfo_toplevel()
+            root.clipboard_clear()
+            root.clipboard_append(content)
+            messagebox.showinfo("Copied", "Generated output copied to clipboard")
+
+        tk.Button(copy_frame, text="Copy Output", command=copy_output,
+                  bg=ACCENT_COLOR, fg="#0f172a", font=("Segoe UI", 10, "bold"), relief="flat", cursor="hand2").pack(side="left")
+
         self.btn_save = tk.Button(frame, text="SAVE GENERATED PASSWORD",
                                   command=self.save,
                                   bg=SAVE_COLOR, fg="white", font=("Segoe UI", 11, "bold"),

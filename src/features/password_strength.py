@@ -19,12 +19,16 @@ def evaluate_password_strength(password: str) -> tuple[str, str, list[str]]:
     feedback = []
 
     # Structural checks
+    # NOTE: avoid using string.punctuation directly as a regex pattern (it contains
+    # regex metacharacters like '[' and '\\') which can cause 'unterminated
+    # character set' errors. Use a simple membership check for special characters.
+    special_char = any(ch in string.punctuation for ch in password)
     checks = [
         (len(password) >= 12,           "Length < 12"),
         (re.search(r"[A-Z]", password), "No uppercase letter"),
         (re.search(r"[a-z]", password), "No lowercase letter"),
         (re.search(r"[0-9]", password), "No number"),
-        (re.search(string.punctuation, password), "No special character")
+        (special_char, "No special character")
     ]
 
     for passed, msg in checks:
