@@ -1,3 +1,4 @@
+# src/utils/dictionary.py
 import os
 import nltk
 from nltk.corpus import words as nltk_words
