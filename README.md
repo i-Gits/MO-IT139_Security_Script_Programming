@@ -32,7 +32,7 @@ A comprehensive security toolkit with four main features:
 - Email validation follows RFC 5321 standards
 - Blocks disposable email domains
 - Shows ALL violations per field with inline feedback
-- Displays sanitized output for safe database storage
+- Displays sanitized output for safe database storage (via "security_logger.py")
 
 ---
 
@@ -69,6 +69,7 @@ python main.py
 ### Utilities (`src/utils/`)
 - **dictionary.py** - Dictionary loading (local + NLTK)
 - **genPassStorage.py** - Password hash storage (NO raw passwords)
+- **security_logger.py** - Security event logging (attacks, sanitization, validation)
 
 ### GUI (`gui/`)
 - **password_strength_tab.py** - Strength analyzer interface
@@ -126,6 +127,7 @@ python main.py
 - Blocks SQL keywords (SELECT, DROP, etc.)
 - Blocks XSS patterns (script tags, event handlers)
 - Blocks JavaScript protocols
+- Logs attack attempts (SQL injection, XSS) to security log
 
 ---
 
@@ -151,6 +153,8 @@ python main.py
 - ✓ XSS pattern detection and removal
 - ✓ HTML entity escaping
 - ✓ Inline validation with ALL violations shown
+- ✓ Disposable email domain blocking
+- ✓ Security logging system
 
 
 ---
@@ -162,6 +166,13 @@ Format: `[timestamp] | hash # salt`
 - Stores hash and salt only
 - NO raw passwords saved
 - Append mode (previous entries preserved)
+
+### Security Logs (`data/security_log.txt`)
+Format: Timestamped entries with detailed event information
+- Logs attack attempts (SQL injection, XSS, disposable emails)
+- Records sanitization actions
+- Tracks validation summaries
+- Append mode (audit trail preserved)
 
 ---
 
@@ -188,10 +199,11 @@ nltk (optional - for extended dictionary)
 - Password Generator & Hasher with SHA-256
 - Web Form Validator & Sanitizer with XSS/SQL injection protection
 
-**Bug Fixes Applied - January 27, 2026**:
+**Bug Fixes/Updates Applied - January 27, 2026**:
 - Fixed duplicate space error in username validation (spaces excluded from invalid chars regex)
 - Improved error message display (quoted special characters)
 - Strict single-space formatting for full names (`\s{2,}`)
+- Implemented comprehensive security logging system (`security_logger.py`)
 
 ### MS1 (Final)
 *In progress - awaiting final review and testing*
@@ -202,6 +214,8 @@ nltk (optional - for extended dictionary)
 
 - **NLTK is optional**: App works without it but has smaller dictionary
 - **Raw passwords**: NEVER stored in password generator
+- **Security logs**: All validation events logged to `data/security_log.txt` for audit purposes
+- **User privacy**: Users only see clean error messages, not detailed security logs
 ---
 
 ## Group's Project Plan

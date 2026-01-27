@@ -173,7 +173,7 @@
 - Must contain exactly one '@' symbol
 - Local part (before @): max 64 chars, alphanumeric start/end, allows ._+-
 - Domain part (after @): must have dot, valid TLD (2-63 chars, letters only)
-- Blocks disposable email domains
+- Blocks disposable email domains (yopmail.com, mailinator.com, temp-mail.org, etc.)
 - No consecutive dots in local or domain parts
 
 **Reference**: https://whoapi.com/blog/understanding-valid-email-address-formats-a-short-guide/
@@ -238,6 +238,105 @@
 
 ---
 
+## Security Logger
+
+### log_threat(field_name, threat_type, original_value, sanitized_value, detected_patterns)
+**Purpose**: Log security threats (XSS, SQL injection, etc.) to file.
+
+**Parameters**:
+- `field_name` (str): Name of the field (e.g., "Message", "Email")
+- `threat_type` (str): Type of threat (e.g., "XSS ATTEMPT", "SQL INJECTION")
+- `original_value` (str): Original user input
+- `sanitized_value` (str): Cleaned/sanitized value
+- `detected_patterns` (list): List of detected malicious patterns
+
+**Returns**: Boolean (True if logged successfully)
+
+**File Location**: `data/security_log.txt`
+
+**Details**:
+- Creates timestamped entries with threat details
+- Truncates long values to 100 characters in log
+- Uses separator lines (=) for visual distinction
+- Silent operation (users never notified)
+
+---
+
+### log_sanitization(field_name, original_value, sanitized_value, reason)
+**Purpose**: Log field sanitization actions (character removal, formatting, etc.).
+
+**Parameters**:
+- `field_name` (str): Name of the field
+- `original_value` (str): Original user input
+- `sanitized_value` (str): Cleaned value
+- `reason` (str): Description of what was sanitized
+
+**Returns**: Boolean (True if logged successfully)
+
+**File Location**: `data/security_log.txt`
+
+**Details**:
+- Records before/after values for audit purposes
+- Includes reason for sanitization
+- Appends to existing log file
+- Used for both valid fields with sanitization and invalid fields with suspicious content
+
+---
+
+### log_validation_summary(form_data, results)
+**Purpose**: Log complete validation summary for a form submission.
+
+**Parameters**:
+- `form_data` (dict): Original form data dictionary
+- `results` (dict): Validation results from validate_and_sanitize_form()
+
+**Returns**: Boolean (True if logged successfully)
+
+**File Location**: `data/security_log.txt`
+
+**Details**:
+- Creates comprehensive summary with all field statuses
+- Shows overall pass/fail status
+- Lists all sanitization actions performed
+- Uses separator lines (*) for visual distinction
+- Called automatically on every form validation
+
+---
+
+### log_attack_attempt(field_name, attack_type, original_value)
+**Purpose**: Log serious attack attempts (SQL injection, XSS, disposable emails, etc.).
+
+**Parameters**:
+- `field_name` (str): Name of the field
+- `attack_type` (str): Type of attack detected
+- `original_value` (str): Malicious input attempted
+
+**Returns**: Boolean (True if logged successfully)
+
+**File Location**: `data/security_log.txt`
+
+**Details**:
+- Creates high-visibility entries
+- Truncates long values to 150 characters in log
+- Used for: SQL injection, XSS attempts, disposable emails, malicious content
+- Triggered by validation failures with security implications
+
+---
+
+### ensure_log_dir()
+**Purpose**: Create data directory if it doesn't exist.
+
+**Parameters**: None
+
+**Returns**: None
+
+**Details**:
+- Called internally by all logging functions
+- Uses `os.makedirs()` with `exist_ok=True`
+- Ensures log file location is available before writing
+
+---
+
 ## Global Variables
 
 ### DICTIONARY_WORDS
@@ -277,6 +376,17 @@ Regex patterns to detect XSS and malicious code in messages.
 ### DISPOSABLE_DOMAINS
 List of temporary/disposable email service domains to block.
 
+**Examples**: 
+- yopmail.com
+- mailinator.com
+- temp-mail.org
+- guerrillamail.com
+- 10minutemail.com
+- trashmail.com
+- throwaway.email
+
+**Usage**: Checked during email validation to prevent temporary email addresses
+
 ---
 
 ## GUI Features
@@ -298,8 +408,67 @@ Scrollbars appear only when content exceeds the visible area:
 ### Inline Validation Feedback
 Web form validator shows:
 - ✓ Valid (green) - Field passes all checks
-- ⚠ Sanitized (orange) - Field was cleaned
 - ✗ Error (red) - Lists ALL violations separated by bullets (•)
+
+**Note**: Sanitization warnings are no longer shown to users. All sanitization is logged silently to `data/security_log.txt` for audit purposes.
+
+---
+
+## Security Logging System
+
+### Overview
+All validation events, sanitization actions, and security threats are automatically logged to `data/security_log.txt`. This provides an audit trail for security monitoring without exposing technical details to end users.
+
+### Log File Format
+
+**Attack Attempts:**
+```
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+[2026-01-27 18:30:45] !!! ATTACK ATTEMPT DETECTED !!! 
+  Field: Message
+  Attack Type: SQL INJECTION ATTEMPT
+  Malicious Input: SELECT * FROM users; DROP TABLE users;
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+```
+
+**Sanitization Actions:**
+```
+[2026-01-27 18:31:20] SANITIZATION - Username
+  Original: user@name!
+  Sanitized: username
+  Reason: Invalid input rejected: Invalid characters: '!', '@'
+```
+
+**Validation Summary:**
+```
+**********************************************************************
+[2026-01-27 18:32:00] FORM VALIDATION SUMMARY
+**********************************************************************
+  ✓ Full Name: Valid
+  ✓ Email: Valid (sanitized)
+  ✗ Username: Invalid - Username must be at least 4 characters long
+  ✓ Message: Valid
+
+  Overall Status: FAILED
+
+  Sanitization Actions:
+    - Email: Sanitized (normalized to standard format)
+**********************************************************************
+```
+
+### What Gets Logged
+
+1. **Attack Attempts**: SQL injection, XSS, disposable emails
+2. **Field Sanitization**: Invalid character removal, format normalization
+3. **Validation Results**: Per-field status and overall form status
+4. **Threat Details**: Original malicious input and detected patterns
+
+### User Experience
+
+- Users see only clean error messages in the UI
+- No mention of logs or sanitization details to users
+- All security events tracked silently in background
+- Log file accessible only to administrators/developers
 
 ---
 
@@ -319,11 +488,13 @@ Web form validator shows:
 - Custom modal popup with dark blue theme (matches main GUI)
 - Password Generator & Hasher tab
 - Web Form Validator & Sanitizer tab
-- Text Encryptor/Decryptor tab
 - Dictionary-based password checks (local + NLTK)
 - Combined structural + veto checks for nuanced results
 - Enter key binding for improved usability
 - Conditional scrollbars across all tabs
 - Inline validation showing ALL violations per field
 - Green success indicators for valid fields
-- Sanitization summaries with detailed notes
+- Security logging system & sanitization audit trail in log file (`security_logger.py`)
+- Disposable email domain blocking (7 domains)
+- Silent threat logging (users see clean errors only)
+- Attack attempt tracking (SQL injection, XSS)

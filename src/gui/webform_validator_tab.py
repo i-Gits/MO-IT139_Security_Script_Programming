@@ -3,6 +3,7 @@ import re
 import tkinter as tk
 from tkinter import ttk, messagebox, Frame, Label, Button, Text, Scrollbar, Entry, END
 from features.webform_validator import validate_and_sanitize_form
+from utils.security_logger import log_validation_summary, log_threat, log_attack_attempt
 
 # Theme colors
 BG_COLOR = "#0f172a"
@@ -111,10 +112,6 @@ class WebValidatorTab(tk.Frame):
         self.status_label = tk.Label(self.status_frame, text="", font=("Segoe UI", 12, "bold"),
                                      fg=TEXT_MAIN, bg=CARD_COLOR, justify="left", anchor="w")
         self.status_label.pack(fill="x")
-        
-        self.status_icon = tk.Label(self.status_frame, text="", font=("Segoe UI", 16),
-                                    fg=TEXT_MAIN, bg=CARD_COLOR, justify="left", anchor="w")
-        self.status_icon.pack(fill="x", pady=(5, 0))
 
     def _on_message_scroll(self, *args):
         """Show/hide message scrollbar based on content"""
@@ -133,7 +130,7 @@ class WebValidatorTab(tk.Frame):
         self.status_frame.pack_forget()
 
     def validate_form(self):
-        """Validate form and show inline errors"""
+        """Validate form and show inline errors (user-facing only)"""
         self.clear_errors()
         
         form_data = {
@@ -143,7 +140,11 @@ class WebValidatorTab(tk.Frame):
             'message': self.text_message.get("1.0", END).strip()
         }
         
+        # Call backend validation and sanitization
         results = validate_and_sanitize_form(form_data)
+        
+        # Log validation summary to file (backend logging - not shown to user)
+        log_validation_summary(form_data, results)
         
         # Check for empty fields
         if results.get('has_empty_fields'):
@@ -154,65 +155,109 @@ class WebValidatorTab(tk.Frame):
             )
             return
         
-        # Display inline errors for each field
+        # Track if any errors found
         has_errors = False
         
-        # Full Name errors - show ALL violations
+
+        # FULL NAME VALIDATION - Show user-facing errors only
         name_errors = self.get_all_name_errors(form_data['full_name'])
         if name_errors:
             self.label_name_error.config(text=f"✗ {' • '.join(name_errors)}", fg=ERROR_COLOR)
             has_errors = True
-        elif results['validation']['full_name']['sanitized']:
-            self.label_name_error.config(text="⚠ Sanitized (invalid characters removed)", 
-                                        fg=WARNING_COLOR)
+            
+            # Log suspicious full name attempts (contains numbers or excessive invalid chars)
+            if 'Cannot contain numbers' in ' '.join(name_errors) or 'Contains invalid characters' in ' '.join(name_errors):
+                from utils.security_logger import log_sanitization
+                sanitized = results['sanitized']['full_name']
+                log_sanitization('Full Name', form_data['full_name'], sanitized, 
+                               f"Invalid input rejected: {', '.join(name_errors[:2])}")
         else:
             self.label_name_error.config(text="✓ Valid", fg=SUCCESS_COLOR)
+            # Log sanitization to file if it occurred (backend only)
+            if results['validation']['full_name']['sanitized']:
+                original = form_data['full_name']
+                sanitized = results['sanitized']['full_name']
+                # Silent logging - user doesn't see this
+                from utils.security_logger import log_sanitization
+                log_sanitization('Full Name', original, sanitized, 'Invalid characters removed and formatted')
         
-        # Email errors - show ALL violations
+
+        # EMAIL VALIDATION - Show user-facing errors only
         email_errors = self.get_all_email_errors(form_data['email'])
         if email_errors:
             self.label_email_error.config(text=f"✗ {' • '.join(email_errors)}", fg=ERROR_COLOR)
             has_errors = True
-        elif results['validation']['email']['sanitized']:
-            self.label_email_error.config(text="⚠ Sanitized (normalized to standard format)", 
-                                         fg=WARNING_COLOR)
+            
+            # Log disposable email attempts to file
+            if 'Disposable email not allowed' in ' '.join(email_errors):
+                log_attack_attempt('Email', 'DISPOSABLE EMAIL ATTEMPT', form_data['email'])
         else:
             self.label_email_error.config(text="✓ Valid", fg=SUCCESS_COLOR)
+            # Log sanitization to file if it occurred (backend only)
+            if results['validation']['email']['sanitized']:
+                original = form_data['email']
+                sanitized = results['sanitized']['email']
+                from utils.security_logger import log_sanitization
+                log_sanitization('Email', original, sanitized, 'Normalized to standard format')
         
-        # Username errors - show ALL violations
+
+        # USERNAME VALIDATION - Show user-facing errors only
         username_errors = self.get_all_username_errors(form_data['username'])
         if username_errors:
             self.label_username_error.config(text=f"✗ {' • '.join(username_errors)}", fg=ERROR_COLOR)
             has_errors = True
-        elif results['validation']['username']['sanitized']:
-            self.label_username_error.config(text="⚠ Sanitized (invalid characters removed)", 
-                                            fg=WARNING_COLOR)
+            
+            # Log suspicious username attempts (invalid characters, length issues)
+            if 'Invalid characters' in ' '.join(username_errors) or 'Cannot start with a number' in ' '.join(username_errors):
+                from utils.security_logger import log_sanitization
+                sanitized = results['sanitized']['username']
+                log_sanitization('Username', form_data['username'], sanitized,
+                               f"Invalid input rejected: {', '.join(username_errors[:2])}")
         else:
             self.label_username_error.config(text="✓ Valid", fg=SUCCESS_COLOR)
+            # Log sanitization to file if it occurred (backend only)
+            if results['validation']['username']['sanitized']:
+                original = form_data['username']
+                sanitized = results['sanitized']['username']
+                from utils.security_logger import log_sanitization
+                log_sanitization('Username', original, sanitized, 'Invalid characters removed')
         
-        # Message errors - show ALL violations
+
+        # MESSAGE VALIDATION - Show user-facing errors only
         message_errors = self.get_all_message_errors(form_data['message'])
         if message_errors:
             self.label_message_error.config(text=f"✗ {' • '.join(message_errors)}", fg=ERROR_COLOR)
             has_errors = True
-        elif results['validation']['message']['sanitized']:
-            self.label_message_error.config(text="⚠ Sanitized (malicious content removed)", 
-                                           fg=WARNING_COLOR)
+            
+            # Log security threats to file (XSS, SQL injection attempts)
+            threats = results['validation']['message'].get('threats', [])
+            if threats:
+                # Determine attack type
+                message_upper = form_data['message'].upper()
+                if any(kw in message_upper for kw in ['SELECT', 'DROP', 'INSERT', 'DELETE', 'UPDATE']):
+                    log_attack_attempt('Message', 'SQL INJECTION ATTEMPT', form_data['message'])
+                elif '<script' in form_data['message'].lower() or 'javascript:' in form_data['message'].lower():
+                    log_attack_attempt('Message', 'XSS ATTEMPT', form_data['message'])
+                else:
+                    log_attack_attempt('Message', 'MALICIOUS CONTENT', form_data['message'])
         else:
             self.label_message_error.config(text="✓ Valid", fg=SUCCESS_COLOR)
+            # Log sanitization to file if it occurred (backend only)
+            if results['validation']['message']['sanitized']:
+                original = form_data['message']
+                sanitized = results['sanitized']['message']
+                sanitization_notes = results.get('sanitization_notes', [])
+                log_threat('Message', 'CONTENT SANITIZED', original, sanitized, sanitization_notes)
         
-        # Show overall status indicator
+
+        # OVERALL STATUS INDICATOR - Simple user-facing message (to not overwhelm users & not give too much info)
         if has_errors:
             self.show_status_indicator("✗ Validation Failed", 
                                       "Please correct the errors above and try again.", 
                                       ERROR_COLOR)
-        elif results['summary']:
-            self.show_status_indicator("⚠ Validation Passed with Sanitization", 
-                                      "Your form has been sanitized for security.", 
-                                      WARNING_COLOR)
         else:
             self.show_status_indicator("✓ All Fields Valid", 
-                                      "Your form submission is clean and ready for processing!", 
+                                      "Your form submission is clean and ready!", 
                                       SUCCESS_COLOR)
     
     def get_all_name_errors(self, name):
@@ -234,7 +279,7 @@ class WebValidatorTab(tk.Frame):
             char_display = ', '.join(f"'{c}'" for c in sorted(invalid_chars))
             errors.append(f"Contains invalid characters: {char_display}")
         
-        if re.search(r'\s{3,}', name):
+        if re.search(r'\s{2,}', name):
             errors.append("Too many consecutive spaces")
         
         return errors
@@ -305,6 +350,19 @@ class WebValidatorTab(tk.Frame):
                             errors.append("Invalid TLD (too short)")
                         if not tld.isalpha():
                             errors.append("TLD must contain only letters")
+                    
+
+                    # Check for disposable/temporary email domains
+                    DISPOSABLE_DOMAINS = [
+                        'temp-mail.org', 'guerrillamail.com', '10minutemail.com',
+                        'mailinator.com', 'yopmail.com', 'trashmail.com', 'throwaway.email'
+                    ]
+                    
+                    domain_lower = domain_part.lower()
+                    for disposable in DISPOSABLE_DOMAINS:
+                        if domain_lower.endswith(disposable):
+                            errors.append(f"Disposable email not allowed ({disposable})")
+                            break
                     
             except ValueError:
                 errors.append("Invalid email structure")

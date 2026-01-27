@@ -1,0 +1,77 @@
+
+**********************************************************************
+[2026-01-27 14:27:37] FORM VALIDATION SUMMARY
+**********************************************************************
+  ✗ Full Name: Invalid - Full name has too many consecutive spaces
+  ✗ Email: Invalid - Disposable email not allowed
+  ✗ Username: Invalid - Username cannot contain spaces
+  ✗ Message: Invalid - Message contains prohibited content
+
+  Overall Status: FAILED
+
+  Sanitization Actions:
+    - Full Name: Full name has too many consecutive spaces
+    - Email: Disposable email not allowed
+    - Username: Username cannot contain spaces
+    - Message: Message contains prohibited content
+**********************************************************************
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+[2026-01-27 14:27:37] !!! ATTACK ATTEMPT DETECTED !!! 
+  Field: Email
+  Attack Type: DISPOSABLE EMAIL ATTEMPT
+  Malicious Input: test@yopmail.com
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+[2026-01-27 14:27:37] SANITIZATION - Username
+  Original: mab3L gl!tterz
+  Sanitized: mab3lgltterz
+  Reason: Invalid input rejected: Spaces are not allowed, Invalid characters: '!'
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+[2026-01-27 14:27:37] !!! ATTACK ATTEMPT DETECTED !!! 
+  Field: Message
+  Attack Type: SQL INJECTION ATTEMPT
+  Malicious Input: SELECT * FROM users; DROP TABLE passwords;
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+**********************************************************************
+[2026-01-27 14:30:55] FORM VALIDATION SUMMARY
+**********************************************************************
+  ✓ Full Name: Valid
+  ✗ Email: Invalid - Disposable email not allowed
+  ✗ Username: Invalid - Username contains invalid characters
+  ✗ Message: Invalid - Message contains prohibited content
+
+  Overall Status: FAILED
+
+  Sanitization Actions:
+    - Email: Disposable email not allowed
+    - Username: Username contains invalid characters
+    - Message: Message contains prohibited content
+**********************************************************************
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+[2026-01-27 14:30:55] !!! ATTACK ATTEMPT DETECTED !!! 
+  Field: Email
+  Attack Type: DISPOSABLE EMAIL ATTEMPT
+  Malicious Input: jessica.tams@temp-mail.org
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+[2026-01-27 14:30:55] SANITIZATION - Username
+  Original: jess.profesh
+  Sanitized: jessprofesh
+  Reason: Invalid input rejected: Invalid characters: '.'
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+[2026-01-27 14:30:55] !!! ATTACK ATTEMPT DETECTED !!! 
+  Field: Message
+  Attack Type: SQL INJECTION ATTEMPT
+  Malicious Input: SELECT * FROM users; DROP TABLE passwords;
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
