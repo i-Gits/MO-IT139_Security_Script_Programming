@@ -229,8 +229,10 @@ class WebValidatorTab(tk.Frame):
         if re.search(r'\d', name):
             errors.append("Cannot contain numbers")
         
-        if re.search(r'[^a-zA-Z\s\'\-]', name):
-            errors.append("Contains invalid special characters")
+        invalid_chars = set(re.findall(r'[^a-zA-Z\s\'\-]', name))
+        if invalid_chars:
+            char_display = ', '.join(f"'{c}'" for c in sorted(invalid_chars))
+            errors.append(f"Contains invalid characters: {char_display}")
         
         if re.search(r'\s{3,}', name):
             errors.append("Too many consecutive spaces")
@@ -261,7 +263,6 @@ class WebValidatorTab(tk.Frame):
         elif email.count('@') > 1:
             errors.append("Multiple '@' symbols not allowed")
         else:
-            # Check structure if @ exists
             try:
                 local_part, domain_part = email.rsplit('@', 1)
                 
@@ -298,7 +299,6 @@ class WebValidatorTab(tk.Frame):
                     if domain_part[-1] in '.-':
                         errors.append("Domain ends with invalid character")
                     
-                    # Check TLD
                     if '.' in domain_part:
                         tld = domain_part.split('.')[-1]
                         if len(tld) < 2:
@@ -331,21 +331,21 @@ class WebValidatorTab(tk.Frame):
         if username and username[0].isdigit():
             errors.append("Cannot start with a number")
 
-        # ── Check for spaces ──
         if ' ' in original_username:
             errors.append("Spaces are not allowed")
+
+        if '__' in username:
+            errors.append("Consecutive underscores not allowed")
 
         if not re.match(r'^[a-zA-Z][a-zA-Z0-9_]*$', username):
             if username and not username[0].isalpha():
                 if "Cannot start with a number" not in ' '.join(errors):
                     errors.append("Must start with a letter")
             
-            invalid_chars = set(re.findall(r'[^a-zA-Z0-9_]', username))
+            invalid_chars = set(re.findall(r'[^a-zA-Z0-9_\s]', username))
             if invalid_chars:
-                errors.append(f"Invalid characters: {', '.join(invalid_chars)}")
-        
-        if '__' in username:
-            errors.append("Consecutive underscores not allowed")
+                char_display = ', '.join(f"'{c}'" for c in sorted(invalid_chars))
+                errors.append(f"Invalid characters: {char_display}")
         
         return errors
     
@@ -362,7 +362,6 @@ class WebValidatorTab(tk.Frame):
         
         message_upper = message.upper()
         
-        # Check for SQL injection keywords
         sql_keywords = ["SELECT", "DROP", "INSERT", "DELETE", "UPDATE", "UNION",
                        "CREATE", "ALTER", "EXEC", "EXECUTE", "OR 1=1", "OR '1'='1"]
         sql_found = []
@@ -373,7 +372,6 @@ class WebValidatorTab(tk.Frame):
         if sql_found:
             errors.append(f"SQL keywords detected: {', '.join(sql_found[:3])}")
         
-        # Check for XSS patterns
         if '<script' in message.lower():
             errors.append("Script tags not allowed")
         

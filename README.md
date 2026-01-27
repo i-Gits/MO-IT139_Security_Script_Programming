@@ -7,7 +7,6 @@ A comprehensive security toolkit with four main features:
 1. **Password Strength Analyzer** - Evaluates password security with structural and dictionary checks
 2. **Password Generator & Hasher** - Creates strong passwords and generates SHA-256 hashes
 3. **Web Form Validator & Sanitizer** - Validates and sanitizes form inputs against XSS/SQL injection
-4. **Text Encryptor/Decryptor** - Encrypts and decrypts text using Fernet encryption
 
 ---
 
@@ -34,12 +33,6 @@ A comprehensive security toolkit with four main features:
 - Blocks disposable email domains
 - Shows ALL violations per field with inline feedback
 - Displays sanitized output for safe database storage
-
-### 4. Text Encryptor/Decryptor
-- Fernet symmetric encryption (AES-128)
-- Generate and save encryption keys
-- Encrypt/decrypt text with visual feedback
-- Copy encrypted text to clipboard
 
 ---
 
@@ -72,7 +65,6 @@ python main.py
 - **password_strength.py** - Password evaluation logic with veto checks
 - **password_generator.py** - Secure password generation and hashing
 - **webform_validator.py** - Form validation with XSS/SQL injection detection
-- **encryption.py** - Text encryption/decryption using Fernet
 
 ### Utilities (`src/utils/`)
 - **dictionary.py** - Dictionary loading (local + NLTK)
@@ -82,7 +74,7 @@ python main.py
 - **password_strength_tab.py** - Strength analyzer interface
 - **password_generator_tab.py** - Generator interface
 - **web_validator_tab.py** - Form validator interface
-- **encryption_tab.py** - Encryption tool interface
+- **styles.py** - Application theme configuration
 
 ---
 
@@ -109,15 +101,16 @@ python main.py
 ## Web Form Validation Rules
 
 ### Full Name
-- Min 2 characters
-- No numbers
+- Minimum 2 characters
+- No numbers allowed
 - Only letters, spaces, hyphens, apostrophes
-- Max 3 consecutive spaces
+- Allows single-space format only (✅"Mario Juan" | ❌"Mario  Juan")
 
 ### Email
 - RFC 5321 compliant (max 320 chars)
 - Valid structure: local@domain.tld
 - No spaces, consecutive dots, or invalid characters
+- Should not start with a special character
 - Blocks disposable email domains
 
 ### Username
@@ -129,6 +122,7 @@ python main.py
 
 ### Message
 - Max 250 characters
+- Should not be empty
 - Blocks SQL keywords (SELECT, DROP, etc.)
 - Blocks XSS patterns (script tags, event handlers)
 - Blocks JavaScript protocols
@@ -142,6 +136,14 @@ python main.py
 - ✓ SHA-256 hashing with 16-byte random salt
 - ✓ Raw passwords NEVER saved to disk
 - ✓ Hash storage in `data/passwords.txt`
+- ✓ Copy functions for easy password management
+
+### Password Strength Analyzer
+- ✓ Dictionary word detection (local + NLTK)
+- ✓ Common password veto system
+- ✓ Visual strength indicators
+- ✓ SHA-256 hash generation for analysis
+- ✓ Detailed feedback on weaknesses
 
 ### Web Form Validator
 - ✓ Multi-layer sanitization (9 layers)
@@ -150,10 +152,6 @@ python main.py
 - ✓ HTML entity escaping
 - ✓ Inline validation with ALL violations shown
 
-### Text Encryption
-- ✓ Fernet symmetric encryption (AES-128)
-- ✓ Key management with secure storage
-- ✓ Base64 encoded output
 
 ---
 
@@ -163,10 +161,7 @@ python main.py
 Format: `[timestamp] | hash # salt`
 - Stores hash and salt only
 - NO raw passwords saved
-
-### Encryption Keys (`data/encryption_keys.txt`)
-- Stores generated Fernet keys
-- Load existing keys or generate new ones
+- Append mode (previous entries preserved)
 
 ---
 
@@ -181,29 +176,25 @@ string (built-in)
 random (built-in)
 datetime (built-in)
 nltk (optional - for extended dictionary)
-cryptography (required - for encryption)
 ```
 
 ---
 
 ## Version History
 
-### Version 1.0
-- Password strength analyzer with local dictionary
-- Basic GUI with dark blue theme
-- 7-point scoring system
+### MS1 (Draft) 
+**Core Features Implemented - January 26, 2026**:
+- Password Strength Analyzer with 7-point scoring system
+- Password Generator & Hasher with SHA-256
+- Web Form Validator & Sanitizer with XSS/SQL injection protection
 
-### Version 2.0 (Current)
-- Added NLTK integration for extended dictionary
-- Added Password Generator with SHA-256 hashing
-- Added Web Form Validator with XSS/SQL injection protection
-- Added Text Encryptor/Decryptor
-- Custom dark theme across all tabs
-- Enhanced UX with inline validation feedback
-- Shows ALL violations per field (not just first error)
-- Conditional scrollbars for better UI
-- Green success indicators for valid fields
-- Enter key binding for quick analysis
+**Bug Fixes Applied - January 27, 2026**:
+- Fixed duplicate space error in username validation (spaces excluded from invalid chars regex)
+- Improved error message display (quoted special characters)
+- Strict single-space formatting for full names (`\s{2,}`)
+
+### MS1 (Final)
+*In progress - awaiting final review and testing*
 
 ---
 
@@ -211,9 +202,6 @@ cryptography (required - for encryption)
 
 - **NLTK is optional**: App works without it but has smaller dictionary
 - **Raw passwords**: NEVER stored in password generator
-- **Form validation**: Shows sanitized output safe for database
-- **Encryption keys**: Store securely and don't lose them!
-
 ---
 
 ## Group's Project Plan

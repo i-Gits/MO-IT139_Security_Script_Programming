@@ -56,8 +56,8 @@ def validate_full_name(name):
         invalid_chars = set(re.findall(r'[^a-zA-Z\s\'\-]', name))
         return False, "Full name contains invalid special characters", f"Invalid characters found: {', '.join(invalid_chars)}"
     
-    # ── Excessive consecutive spaces ──
-    if re.search(r'\s{3,}', name):
+    # ── Excessive consecutive spaces (strictly single-space only) ──
+    if re.search(r'\s{2,}', name):
         return False, "Full name has too many consecutive spaces", "Please use single spaces between words"
     
     return True, "Valid", ""
