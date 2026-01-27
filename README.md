@@ -104,7 +104,7 @@ python main.py
 - Minimum 2 characters
 - No numbers allowed
 - Only letters, spaces, hyphens, apostrophes
-- Allows single-space format only (✅"Mario Juan" | ❌"Mario  Juan")
+- Allows single-space format only (✅"Mario Juan" | ❌"Mario__Juan"  *2 spaces in between)
 
 ### Email
 - RFC 5321 compliant (max 320 chars)
