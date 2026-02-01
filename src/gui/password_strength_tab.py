@@ -18,6 +18,9 @@ COLOR_MAP = {
     "STRONG": COLOR_STRONG
 }
 
+#test
+
+
 class PasswordStrengthTab(tk.Frame):  # ← using tk.Frame instead of ttk for easier bg control
     def __init__(self, parent):
         super().__init__(parent, bg=BG_COLOR)
