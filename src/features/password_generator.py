@@ -5,11 +5,12 @@ import random
 import string
 
 def generate_password(length=12):
-    """Generate a strong password of specified length"""
+    
     if length < 8:
         length = 8
-    if length > 16:
-        length = 16
+    if length > 32:  
+        length = 32
+    
     
     classes = [
         random.choice(string.ascii_uppercase),
