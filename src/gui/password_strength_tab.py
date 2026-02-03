@@ -17,8 +17,10 @@ COLOR_STRONG = "#22c55e"
 COLOR_MAP = {"WEAK": COLOR_WEAK, "MODERATE": COLOR_MOD, "STRONG": COLOR_STRONG}
 PROGRESS_MAP = {"WEAK": 22, "MODERATE": 60, "STRONG": 100}
 
+#test
 
-class PasswordStrengthTab(tk.Frame):
+
+class PasswordStrengthTab(tk.Frame):  # ← using tk.Frame instead of ttk for easier bg control
     def __init__(self, parent):
         super().__init__(parent, bg=BG_COLOR)
         self.pack(fill="both", expand=True, padx=20, pady=20)
