@@ -13,19 +13,21 @@ except ImportError:
 
 # Checks for administrator/root privileges
 def check_privileges():
+    
+    # Check if the script is running with administrator/root privileges.
     if os.name == 'nt':  # Windows
         try:
             import ctypes
             return ctypes.windll.shell32.IsUserAnAdmin() != 0
-        except:
+        except Exception:
             return False
     else:  # Linux/Mac
         return os.geteuid() == 0
 
 
 def format_packet_info(packet):
-
-    # Format packet details for display
+    
+    # Format packet details for display.
     packet_info = {
         'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
         'protocol': 'Unknown',
@@ -71,16 +73,16 @@ def format_packet_info(packet):
 
 
 def validate_filter(filter_string):
-
-    # Validates BPF filter string
+    
+    # Validate BPF filter string.
     if not filter_string or filter_string.strip() == "":
         return True, None  # Empty filter is valid (captures all)
     
     filter_string = filter_string.strip().lower()
     
     # Checks if there's any valid protocol keywords
-    valid_protocols = ['tcp', 'udp', 'icmp', 'ip', 'arp']
-    valid_keywords = ['and', 'or', 'not', 'port', 'host', 'src', 'dst']
+    valid_protocols = ['tcp', 'udp', 'icmp', 'ip', 'arp', 'ip6']
+    valid_keywords = ['and', 'or', 'not', 'port', 'host', 'src', 'dst', 'net', 'portrange']
     
     # Checks if it contains at least one valid keyword
     tokens = filter_string.split()
@@ -98,20 +100,61 @@ def validate_filter(filter_string):
     if filter_string.count('(') != filter_string.count(')'):
         return False, "Unmatched parentheses in filter."
     
+    # Check for incomplete "port" filters (e.g., "tcp and port" without number)
+    if 'port' in tokens:
+        port_index = tokens.index('port')
+        # Check if there's a token after 'port'
+        if port_index + 1 >= len(tokens):
+            return False, "Incomplete filter. 'port' keyword requires a port number."
+        # Check if the next token is a valid port number
+        next_token = tokens[port_index + 1]
+        if not next_token.isdigit():
+            return False, "Invalid port number. Port must be a number (e.g., 'port 80')."
+    
     return True, None
 
 
 def start_packet_capture(filter_string="", packet_callback=None, stop_callback=None, count=0):
-
-    # Start capturing packets with the specified filter
+    """
+    Start capturing packets with the specified filter.
+        
+    Shows:
+        ImportError: If Scapy is not installed
+        PermissionError: If not running with sufficient privileges
+        ValueError: If filter is invalid
+        Exception: For other capture errors
+    """
     if not SCAPY_AVAILABLE:
-        raise ImportError("Scapy is not installed. Please install it with: 'pip install scapy' ")
+        raise ImportError(
+            "Scapy is not installed.\n\n"
+            "To install Scapy, run:\n"
+            "    pip install scapy\n\n"
+            "After installation, restart the application."
+        )
     
     if not check_privileges():
+        platform_msg = ""
+        if os.name == 'nt':  # Windows
+            platform_msg = (
+                "On Windows:\n"
+                "1. Close this application\n"
+                "2. Right-click Command Prompt or PowerShell\n"
+                "3. Select 'Run as Administrator'\n"
+                "4. Navigate to the project folder\n"
+                "5. Run: python src/main.py"
+            )
+        else:  # Linux/Mac
+            platform_msg = (
+                "On Linux/Mac:\n"
+                "1. Close this application\n"
+                "2. Open Terminal\n"
+                "3. Navigate to the project folder\n"
+                "4. Run with sudo: sudo python3 src/main.py"
+            )
+        
         raise PermissionError(
-            "Administrator/root privileges required.\n"
-            "On Windows: Run as Administrator\n"
-            "On Linux/Mac: Run with sudo"
+            f"Administrator/root privileges required for packet capture.\n\n"
+            f"{platform_msg}"
         )
     
     # Validates filter
@@ -120,7 +163,7 @@ def start_packet_capture(filter_string="", packet_callback=None, stop_callback=N
         raise ValueError(error_msg)
     
     def packet_handler(packet):
-        #Handler that formats and forwards packets to callback
+        # Handler that formats and forwards packets to callback
         if stop_callback and stop_callback():
             return True  # Stop sniffing
         
@@ -137,21 +180,33 @@ def start_packet_capture(filter_string="", packet_callback=None, stop_callback=N
             count=count,
             stop_filter=lambda x: stop_callback() if stop_callback else False
         )
+    except PermissionError:
+        raise PermissionError(
+            "Permission denied while accessing network interface.\n"
+            "Make sure you're running with administrator/root privileges."
+        )
     except Exception as e:
-        raise Exception(f"Capture error: {str(e)}")
+        error_details = str(e)
+        if "permission" in error_details.lower():
+            raise PermissionError(
+                "Network interface access denied.\n"
+                "Administrator/root privileges are required."
+            )
+        else:
+            raise Exception(f"Capture error: {error_details}")
 
 
 def get_scapy_status():
 
-    # Gets Scapy installation/privilege status
+    # Get Scapy installation and privilege status.
     if not SCAPY_AVAILABLE:
-        return False, False, "Scapy not installed. Install with: 'pip install scapy' "
+        return False, False, "Scapy not installed. Install with: pip install scapy"
     
     has_privs = check_privileges()
     if not has_privs:
         if os.name == 'nt':
-            return True, False, "Run as Administrator required"
+            return True, False, "Administrator privileges required (Run as Administrator)"
         else:
             return True, False, "Root privileges required (use sudo)"
     
-    return True, True, "Ready to capture"
+    return True, True, "Ready to capture packets"

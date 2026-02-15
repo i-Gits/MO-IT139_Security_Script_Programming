@@ -81,8 +81,8 @@ class ToolCard(tk.Frame):
 
 
 class PassecuristApp:
-    # Homepage
     
+    # Homepage
     def __init__(self, root):
         self.root = root
         self.root.title("🛡️ PASSECURIST - Network Security Tools")

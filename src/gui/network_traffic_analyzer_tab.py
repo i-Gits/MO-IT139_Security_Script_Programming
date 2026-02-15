@@ -86,93 +86,13 @@ class NetworkTrafficAnalyzerTab:
         center_wrapper = tk.Frame(self.scrollable_frame, bg=BG_COLOR)
         center_wrapper.pack(fill="both", expand=True, padx=50, pady=10)
         
-        # How to Run Instructions Panel
-        instructions_frame = tk.Frame(center_wrapper, bg=CARD_COLOR, padx=25, pady=20)
-        instructions_frame.pack(fill="x", pady=(0, 10))
+        # ONLY show Scapy installation warning if Scapy is not installed
+        # Do NOT show warning for privilege issues (instructions panel handles that)
+        if not self.scapy_installed:
+            self.show_scapy_installation_warning(center_wrapper)
         
-        tk.Label(instructions_frame, text="📋 HOW TO RUN WITH ADMINISTRATOR PRIVILEGES", 
-                font=("Segoe UI", 12, "bold"),
-                fg=ACCENT_COLOR, bg=CARD_COLOR).pack(anchor="w", pady=(0, 10))
-        
-        # Creates three columns for different OS instructions
-        columns_frame = tk.Frame(instructions_frame, bg=CARD_COLOR)
-        columns_frame.pack(fill="x")
-        
-        # Windows Column
-        windows_frame = tk.Frame(columns_frame, bg="#1a2332", padx=15, pady=12)
-        windows_frame.pack(side="left", fill="both", expand=True, padx=(0, 5))
-        
-        tk.Label(windows_frame, text="🪟 WINDOWS", 
-                font=("Segoe UI", 10, "bold"),
-                fg="#38bdf8", bg="#1a2332").pack(anchor="w", pady=(0, 8))
-        
-        windows_steps = (
-            "1. Press Win + X\n"
-            "2. Select 'Command Prompt (Admin)'\n"
-            "   or 'PowerShell (Admin)'\n"
-            "3. Navigate to project:\n"
-            "   cd \"path\\to\\project\"\n"
-            "4. Run:\n"
-            "   python src/main.py"
-        )
-        tk.Label(windows_frame, text=windows_steps,
-                font=("Consolas", 8),
-                fg="#e2e8f0", bg="#1a2332",
-                justify="left").pack(anchor="w")
-        
-        # Linux Column
-        linux_frame = tk.Frame(columns_frame, bg="#1a2332", padx=15, pady=12)
-        linux_frame.pack(side="left", fill="both", expand=True, padx=5)
-        
-        tk.Label(linux_frame, text="🐧 LINUX", 
-                font=("Segoe UI", 10, "bold"),
-                fg="#38bdf8", bg="#1a2332").pack(anchor="w", pady=(0, 8))
-        
-        linux_steps = (
-            "1. Open Terminal\n"
-            "2. Navigate to project:\n"
-            "   cd /path/to/project\n"
-            "3. Run with sudo:\n"
-            "   sudo python3 src/main.py\n"
-            "4. Enter your password"
-        )
-        tk.Label(linux_frame, text=linux_steps,
-                font=("Consolas", 8),
-                fg="#e2e8f0", bg="#1a2332",
-                justify="left").pack(anchor="w")
-        
-        # Mac Column
-        mac_frame = tk.Frame(columns_frame, bg="#1a2332", padx=15, pady=12)
-        mac_frame.pack(side="left", fill="both", expand=True, padx=(5, 0))
-        
-        tk.Label(mac_frame, text="🍎 MAC", 
-                font=("Segoe UI", 10, "bold"),
-                fg="#38bdf8", bg="#1a2332").pack(anchor="w", pady=(0, 8))
-        
-        mac_steps = (
-            "1. Open Terminal\n"
-            "2. Navigate to project:\n"
-            "   cd /path/to/project\n"
-            "3. Run with sudo:\n"
-            "   sudo python3 src/main.py\n"
-            "4. Enter your password"
-        )
-        tk.Label(mac_frame, text=mac_steps,
-                font=("Consolas", 8),
-                fg="#e2e8f0", bg="#1a2332",
-                justify="left").pack(anchor="w")
-        
-        # Note at the bottom
-        tk.Label(instructions_frame, 
-                text="💡 Note: The Port Scanner works without admin privileges. Only the Traffic Analyzer requires elevated permissions.",
-                font=("Segoe UI", 9, "italic"),
-                fg="#94a3b8", bg=CARD_COLOR,
-                wraplength=900,
-                justify="left").pack(anchor="w", pady=(10, 0))
-        
-        # Status/Warning Card (shows when Scapy's not available or there's no privileges)
-        if not self.scapy_installed or not self.has_privileges:
-            self.show_status_warning()
+        # How to Run Instructions Panel - Always visible, updated status based on privileges
+        self.show_instructions_panel(center_wrapper)
         
         # Configuration Panel
         config_frame = tk.Frame(center_wrapper, bg=CARD_COLOR, padx=30, pady=25)
@@ -207,6 +127,9 @@ class NetworkTrafficAnalyzerTab:
         self.filter_status.pack(fill="x", pady=(0, 15))
         
         # Common filter examples
+        # Includes all required protocol filters (TCP, UDP, ICMP)
+        # and port filters (80/HTTP, 443/HTTPS, 53/DNS)
+        # Additional ports like 22/SSH can be entered manually: "tcp and port 22"
         examples_frame = tk.Frame(config_frame, bg=CARD_COLOR)
         examples_frame.pack(fill="x", pady=(0, 20))
         
@@ -294,70 +217,127 @@ class NetworkTrafficAnalyzerTab:
         self.results_text.tag_config("ip", foreground="#e2e8f0")
         self.results_text.tag_config("port", foreground="#a78bfa")
     
-    def show_status_warning(self):
-        """Show warning if Scapy is not available or no privileges"""
-        warning_frame = tk.Frame(self.scrollable_frame, bg=WARNING_COLOR, padx=20, pady=15)
-        warning_frame.pack(fill="x", padx=50, pady=(0, 10))
+    def show_scapy_installation_warning(self, parent):
+        """Show warning ONLY if Scapy is not installed"""
+        warning_frame = tk.Frame(parent, bg=ERROR_COLOR, padx=20, pady=15)
+        warning_frame.pack(fill="x", pady=(0, 10))
         
-        if not self.scapy_installed:
-            tk.Label(warning_frame, text="⚠️ Scapy Not Installed", 
-                    font=("Segoe UI", 12, "bold"),
-                    fg="#1e293b", bg=WARNING_COLOR).pack(anchor="w")
-            
-            tk.Label(warning_frame, 
-                    text="Please install Scapy to use this tool:\n\n"
-                         "Open Command Prompt or Terminal, then run:\n"
-                         "    python -m pip install scapy\n\n"
-                         "After installation, restart this application.",
-                    font=("Consolas", 9),
-                    fg="#1e293b", bg=WARNING_COLOR, justify="left").pack(anchor="w", pady=(5, 0))
+        tk.Label(warning_frame, text="❌ Scapy Not Installed", 
+                font=("Segoe UI", 13, "bold"),
+                fg="white", bg=ERROR_COLOR).pack(anchor="w")
         
-        elif not self.has_privileges:
-            tk.Label(warning_frame, text="⚠️ Administrator/Root Privileges Required", 
-                    font=("Segoe UI", 12, "bold"),
-                    fg="#1e293b", bg=WARNING_COLOR).pack(anchor="w")
-            
-            if os.name == 'nt':  # Windows
-                platform_name = "Windows"
-                msg = ("Packet capture requires Administrator privileges.\n\n"
-                       "How to run with Administrator privileges:\n\n"
-                       "1. Press Windows Key + X\n"
-                       "2. Select 'Command Prompt (Admin)' or 'PowerShell (Admin)'\n"
-                       "3. Navigate to project folder:\n"
-                       "   cd \"path\\to\\your\\project\"\n"
-                       "4. Run the application:\n"
-                       "   python src/main.py")
-            elif os.name == 'posix':  # Linux/Mac/Unix
-                import platform
-                if platform.system() == 'Darwin':  # Mac
-                    platform_name = "macOS"
-                    msg = ("Packet capture requires root privileges.\n\n"
-                           "How to run with root privileges on macOS:\n\n"
-                           "1. Open Terminal (Applications → Utilities → Terminal)\n"
-                           "2. Navigate to project folder:\n"
-                           "   cd /path/to/your/project\n"
-                           "3. Run with sudo:\n"
-                           "   sudo python3 src/main.py\n"
-                           "4. Enter your Mac password when prompted")
-                else:  # Linux
-                    platform_name = "Linux"
-                    msg = ("Packet capture requires root privileges.\n\n"
-                           "How to run with root privileges on Linux:\n\n"
-                           "1. Open Terminal\n"
-                           "2. Navigate to project folder:\n"
-                           "   cd /path/to/your/project\n"
-                           "3. Run with sudo:\n"
-                           "   sudo python3 src/main.py\n"
-                           "4. Enter your password when prompted")
-            else:  # Other Unix-like systems
-                platform_name = "Unix"
-                msg = ("Packet capture requires root privileges.\n\n"
-                       "Run with elevated privileges:\n"
-                       "   sudo python3 src/main.py")
-            
-            tk.Label(warning_frame, text=msg,
-                    font=("Segoe UI", 9),
-                    fg="#1e293b", bg=WARNING_COLOR, justify="left").pack(anchor="w", pady=(5, 0))
+        tk.Label(warning_frame, 
+                text="The Network Traffic Analyzer requires Scapy to function.\n\n"
+                     "To install Scapy, open Command Prompt or Terminal and run:\n"
+                     "    pip install scapy\n\n"
+                     "After installation, restart this application.",
+                font=("Consolas", 10),
+                fg="white", bg=ERROR_COLOR, justify="left").pack(anchor="w", pady=(8, 0))
+    
+    def show_instructions_panel(self, parent):
+        """Show instructions panel with dynamic status indicator"""
+        instructions_frame = tk.Frame(parent, bg=CARD_COLOR, padx=25, pady=20)
+        instructions_frame.pack(fill="x", pady=(0, 10))
+        
+        # Header with status indicator
+        header_frame = tk.Frame(instructions_frame, bg=CARD_COLOR)
+        header_frame.pack(fill="x", pady=(0, 10))
+        
+        tk.Label(header_frame, text="📋 ADMINISTRATOR PRIVILEGES", 
+                font=("Segoe UI", 12, "bold"),
+                fg=ACCENT_COLOR, bg=CARD_COLOR).pack(side="left")
+        
+        # Status indicator
+        if self.scapy_installed and self.has_privileges:
+            status_text = "✓ Ready"
+            status_color = SUCCESS_COLOR
+        elif self.scapy_installed and not self.has_privileges:
+            status_text = "⚠ Required"
+            status_color = WARNING_COLOR
+        else:
+            status_text = "⚠ Install Scapy First"
+            status_color = ERROR_COLOR
+        
+        status_label = tk.Label(header_frame, text=status_text,
+                               font=("Segoe UI", 10, "bold"),
+                               fg=status_color, bg=CARD_COLOR)
+        status_label.pack(side="right")
+        
+        # Creates three columns for different OS instructions
+        columns_frame = tk.Frame(instructions_frame, bg=CARD_COLOR)
+        columns_frame.pack(fill="x")
+        
+        # Windows Column
+        windows_frame = tk.Frame(columns_frame, bg="#1a2332", padx=15, pady=12)
+        windows_frame.pack(side="left", fill="both", expand=True, padx=(0, 5))
+        
+        tk.Label(windows_frame, text="🪟 WINDOWS", 
+                font=("Segoe UI", 10, "bold"),
+                fg="#38bdf8", bg="#1a2332").pack(anchor="w", pady=(0, 8))
+        
+        windows_steps = (
+            "1. Press Win + X\n"
+            "2. Select 'Command Prompt (Admin)'\n"
+            "   or 'PowerShell (Admin)'\n"
+            "3. Navigate to project:\n"
+            "   cd \"path\\to\\project\"\n"
+            "4. Run:\n"
+            "   python src/main.py"
+        )
+        tk.Label(windows_frame, text=windows_steps,
+                font=("Consolas", 8),
+                fg="#e2e8f0", bg="#1a2332",
+                justify="left").pack(anchor="w")
+        
+        # Linux Column
+        linux_frame = tk.Frame(columns_frame, bg="#1a2332", padx=15, pady=12)
+        linux_frame.pack(side="left", fill="both", expand=True, padx=5)
+        
+        tk.Label(linux_frame, text="🐧 LINUX", 
+                font=("Segoe UI", 10, "bold"),
+                fg="#38bdf8", bg="#1a2332").pack(anchor="w", pady=(0, 8))
+        
+        linux_steps = (
+            "1. Open Terminal\n"
+            "2. Navigate to project:\n"
+            "   cd /path/to/project\n"
+            "3. Run with sudo:\n"
+            "   sudo python3 src/main.py\n"
+            "4. Enter your password"
+        )
+        tk.Label(linux_frame, text=linux_steps,
+                font=("Consolas", 8),
+                fg="#e2e8f0", bg="#1a2332",
+                justify="left").pack(anchor="w")
+        
+        # Mac Column
+        mac_frame = tk.Frame(columns_frame, bg="#1a2332", padx=15, pady=12)
+        mac_frame.pack(side="left", fill="both", expand=True, padx=(5, 0))
+        
+        tk.Label(mac_frame, text="🍎 MAC", 
+                font=("Segoe UI", 10, "bold"),
+                fg="#38bdf8", bg="#1a2332").pack(anchor="w", pady=(0, 8))
+        
+        mac_steps = (
+            "1. Open Terminal\n"
+            "2. Navigate to project:\n"
+            "   cd /path/to/project\n"
+            "3. Run with sudo:\n"
+            "   sudo python3 src/main.py\n"
+            "4. Enter your password"
+        )
+        tk.Label(mac_frame, text=mac_steps,
+                font=("Consolas", 8),
+                fg="#e2e8f0", bg="#1a2332",
+                justify="left").pack(anchor="w")
+        
+        # Note at the bottom
+        tk.Label(instructions_frame, 
+                text="💡 Note: Packet capture requires elevated permissions to access network interfaces at the kernel level.",
+                font=("Segoe UI", 9, "italic"),
+                fg="#94a3b8", bg=CARD_COLOR,
+                wraplength=900,
+                justify="left").pack(anchor="w", pady=(10, 0))
     
     # Set filter from quick button
     def set_filter(self, filter_text):
@@ -395,15 +375,27 @@ class NetworkTrafficAnalyzerTab:
             return
         
         if not self.scapy_installed:
-            messagebox.showerror("Error", "Scapy is not installed. Please install it first.")
+            messagebox.showerror(
+                "Scapy Not Installed", 
+                "Scapy is required for packet capture.\n\n"
+                "Install it using:\n"
+                "pip install scapy\n\n"
+                "Then restart the application."
+            )
             return
         
         if not self.has_privileges:
-            messagebox.showerror("Error", "Administrator/root privileges required.")
+            messagebox.showerror(
+                "Privileges Required",
+                "Administrator/root privileges are required for packet capture.\n\n"
+                "Please restart the application with elevated privileges:\n\n"
+                "Windows: Run as Administrator\n"
+                "Linux/Mac: Use sudo"
+            )
             return
         
         if not self.validate_filter_realtime():
-            messagebox.showerror("Error", "Invalid filter. Please fix the filter before starting.")
+            messagebox.showerror("Invalid Filter", "Please fix the filter before starting capture.")
             return
         
         filter_text = self.filter_entry.get().strip()
