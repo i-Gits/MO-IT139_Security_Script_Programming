@@ -359,7 +359,36 @@ with tab_local:
                     
                     total_ports = (p_end - p_start) + 1
                     
-                    # FIX: using a dictionary to avoid 'nonlocal' scope issues
+                    # --- PORT DESCRIPTIONS DICTIONARY ---
+                    PORT_DESCRIPTIONS = {
+                        20: "FTP Data Transfer",
+                        21: "FTP Command Control",
+                        22: "Secure Shell (SSH) - Secure remote login",
+                        23: "Telnet - Unencrypted text communications (Insecure)",
+                        25: "SMTP - Email routing",
+                        53: "DNS - Domain Name System",
+                        67: "DHCP Server - IP assignment",
+                        68: "DHCP Client",
+                        69: "TFTP - Trivial File Transfer",
+                        80: "HTTP - Unencrypted web traffic",
+                        88: "Kerberos - Authentication protocol",
+                        110: "POP3 - Email retrieval",
+                        123: "NTP - Network Time Protocol",
+                        143: "IMAP - Email retrieval",
+                        161: "SNMP - Network management",
+                        194: "IRC - Internet Relay Chat",
+                        389: "LDAP - Directory access",
+                        443: "HTTPS - Secure encrypted web traffic",
+                        445: "SMB - Windows file sharing",
+                        464: "Kerberos Change Password",
+                        636: "LDAPS - Secure directory access",
+                        1720: "H.323 - VoIP call signaling",
+                        3389: "RDP - Windows Remote Desktop",
+                        5060: "SIP - VoIP signaling",
+                        5061: "SIP over TLS - Secure VoIP"
+                    }
+
+                    total_ports = (p_end - p_start) + 1
                     scan_state = {"count": 0} 
                     open_ports_found = []
                     
@@ -372,7 +401,17 @@ with tab_local:
                         
                         if is_open:
                             service = get_service_name(port)
-                            open_ports_found.append({"Port": port, "Service": service, "Status": "OPEN 🟢"})
+                            # get the description, or default to generic if it's a random high port
+                            desc = PORT_DESCRIPTIONS.get(port, "Dynamic/Private Port")
+                            
+                            # desc column
+                            open_ports_found.append({
+                                "Port": port, 
+                                "Service": service, 
+                                "Description": desc, 
+                                "Status": "OPEN"
+                            })
+                            
                             df = pd.DataFrame(open_ports_found)
                             results_placeholder.dataframe(df, use_container_width=True)
 
