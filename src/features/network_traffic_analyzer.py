@@ -6,7 +6,7 @@ from datetime import datetime
 
 # Checks if Scapy is installed
 try:
-    from scapy.all import sniff, IP, TCP, UDP, ICMP, Raw
+    from scapy.all import sniff, IP, TCP, UDP, ICMP, Raw, Ether
     SCAPY_AVAILABLE = True
 except ImportError:
     SCAPY_AVAILABLE = False
@@ -31,6 +31,8 @@ def format_packet_info(packet):
     packet_info = {
         'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
         'protocol': 'Unknown',
+        'src_mac': 'N/A',  # <--- hi, this is NEW
+        'dst_mac': 'N/A',  # <--- also NEW
         'src_ip': 'N/A',
         'dst_ip': 'N/A',
         'src_port': 'N/A',

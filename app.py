@@ -477,14 +477,36 @@ with tab_local:
                         traffic_placeholder = st.empty()
                         captured_data = []
                         
+                        # --- Mini MAC Vendor Database ---
+                        # these are the first 8 characters (OUI) of common MAC addresses
+                        MAC_VENDORS = {
+                            "00:50:56": "VMware", "08:00:27": "VirtualBox", 
+                            "00:15:5D": "Microsoft", "B8:27:EB": "Raspberry Pi",
+                            "00:1A:11": "Google", "3C:5A:B4": "Google",
+                            "00:14:22": "Dell", "00:24:E8": "Cisco",
+                            "28:16:A8": "Intel", "8C:8C:AA": "Apple",
+                            "F4:0F:24": "Apple", "00:E0:4C": "Realtek",
+                            "CC:46:D6": "Cisco", "44:03:2C": "Intel"
+                        }
+
+                        def get_vendor(mac_str):
+                            if mac_str == 'N/A' or not mac_str: return "Unknown"
+                            prefix = str(mac_str).upper()[:8]
+                            return MAC_VENDORS.get(prefix, "Generic Device")
+
                         # callback for real-time ui updates
                         def update_traffic_ui(pkt_info):
+                            # Ggrab the MAC and look up the vendor
+                            src_mac = pkt_info.get('src_mac', 'N/A')
+                            vendor = get_vendor(src_mac)
+
                             captured_data.append({
                                 "Time": pkt_info['timestamp'],
                                 "Proto": pkt_info['protocol'],
+                                "Src Vendor": vendor,           # <--- NEW 
+                                "Src MAC": src_mac,             # <--- NEWW
                                 "Src IP": pkt_info['src_ip'],
                                 "Dst IP": pkt_info['dst_ip'],
-                                "Src Port": pkt_info['src_port'],
                                 "Dst Port": pkt_info['dst_port'],
                                 "Summary": pkt_info['summary']
                             })
