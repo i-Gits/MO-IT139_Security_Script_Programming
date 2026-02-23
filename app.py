@@ -3,6 +3,7 @@ import sys
 import os
 import nltk
 import pandas as pd # needed for displaying the network data tables
+from st_keyup import st_keyup
 
 # --- 1. SETUP ---
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -137,57 +138,65 @@ with tab_web:
     
 
     # --- TAB 1: PASSWORD STRONK ---
+
     with web_t1:
-        # centered layour using columns
+        # centered layout using columns
         c_left, c_center, c_right = st.columns([1, 2, 1])
         
         with c_center:
             st.markdown("### Password Strength")
-            st.caption("Enter a password to analyze its complexity and entropy.")
+            st.caption("Type a password to analyze its complexity and entropy in real-time.")
             
-            password = st.text_input("Password", type="password", key="strength_input", label_visibility="collapsed", placeholder="Type your password here...")
+            # --- visibility toggle with memory ---
+            show_pwd = st.toggle("Hide & Unhide Password", value=False)
+            pwd_type = "default" if show_pwd else "password"
             
-            if st.button("Analyze Strength", key="btn_strength"):
-                if password:
-                    rating, color, feedback = evaluate_password_strength(password)
-                    
-                    st.markdown("---")
-                    
-                    # percentage and colour logic
-                    percent = 0
-                    if rating == "WEAK":
-                        percent = 25
-                        bar_color = "red"
-                    elif rating == "MODERATE":
-                        percent = 60
-                        bar_color = "orange"
-                    else:
-                        percent = 100
-                        bar_color = "green"
-
-                    # result header
-                    col_res, col_prog = st.columns([1, 3])
-                    with col_res:
-                        if rating == "WEAK":
-                            st.error(f"**{rating}**")
-                        elif rating == "MODERATE":
-                            st.warning(f"**{rating}**")
-                        else:
-                            st.success(f"**{rating}**")
-                    
-                    with col_prog:
-                        # PROGRESS BAR WITH PERCENTAGE!
-                        st.progress(percent, text=f"**Strength Score: {percent}%**")
-                    
-                    # feedback section
-                    with st.expander("Security Analysis Details", expanded=True):
-                        for msg in feedback:
-                            if "Correct" in msg or "Excellent" in msg:
-                                st.markdown(f":green[✅ {msg}]")
-                            else:
-                                st.markdown(f":orange[⚠️ {msg}]")
+            # 1. grab the text from Streamlit's memory (if it exists)
+            current_val = st.session_state.get("strength_input", "")
+            
+            # 2. psass it back into the box using value=current_val
+            password = st_keyup("Password", value=current_val, type=pwd_type, key="strength_input", label_visibility="collapsed", placeholder="Type your password here...")
+            
+            if password:
+                rating, color, feedback = evaluate_password_strength(password)
+                
+                st.markdown("---")
+                
+                # percentage and colour logic
+                percent = 0
+                if rating == "WEAK":
+                    percent = 25
+                    bar_color = "red"
+                elif rating == "MODERATE":
+                    percent = 60
+                    bar_color = "orange"
                 else:
-                    st.info("Please input a password first.")
+                    percent = 100
+                    bar_color = "green"
+
+                # result header
+                col_res, col_prog = st.columns([1, 3])
+                with col_res:
+                    if rating == "WEAK":
+                        st.error(f"**{rating}**")
+                    elif rating == "MODERATE":
+                        st.warning(f"**{rating}**")
+                    else:
+                        st.success(f"**{rating}**")
+                
+                with col_prog:
+                    # PROGRESS BAR WITH PERCENTAGE!
+                    st.progress(percent, text=f"**Strength Score: {percent}%**")
+                
+                # feedback section
+                with st.expander("Security Analysis Details", expanded=True):
+                    for msg in feedback:
+                        if "Correct" in msg or "Excellent" in msg:
+                            st.markdown(f":green[✅ {msg}]")
+                        else:
+                            st.markdown(f":orange[⚠️ {msg}]")
+            else:
+                st.info("Start typing a password to see real-time analysis.")
 
     # --- TAB 2: PASSWORD GENERATOR ---
     with web_t2:
@@ -313,6 +322,7 @@ with tab_local:
         st.caption("Discover open ports and services on a target machine.")
         
         c1, c2 = st.columns([1, 2])
+
         with c1:
             st.markdown("#### Configuration")
             target_host = st.text_input("Target Host (IP or Domain)", value="127.0.0.1")
@@ -369,7 +379,20 @@ with tab_local:
                     try:
                         scan_port_range(target_host, p_start, p_end, callback=update_scan_ui)
                         status_text.success("Scan Complete!")
-                        if not open_ports_found:
+                        
+                        if open_ports_found:
+                            # --- EXPORT TO CSV FEATURE ---
+                            df_final = pd.DataFrame(open_ports_found)
+                            csv_data = df_final.to_csv(index=False).encode('utf-8')
+                            
+                            st.download_button(
+                                label="Export Scan Report (CSV)",
+                                data=csv_data,
+                                file_name=f"PortScan_{target_host}.csv",
+                                mime="text/csv",
+                                use_container_width=True
+                            )
+                        else:
                             results_placeholder.warning(f"No open ports found between {p_start} and {p_end}.")
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
@@ -432,7 +455,20 @@ with tab_local:
                         try:
                             start_packet_capture(filter_string=bpf_filter, packet_callback=update_traffic_ui, count=pkt_count)
                             st.success(f"Capture finished. Collected {len(captured_data)} packets.")
-                            if not captured_data:
+                            
+                            if captured_data:
+                                # --- EXPORT TO CSV FEATURE ---
+                                df_final = pd.DataFrame(captured_data)
+                                csv_data = df_final.to_csv(index=False).encode('utf-8')
+                                
+                                st.download_button(
+                                    label="Export Traffic Log (CSV)",
+                                    data=csv_data,
+                                    file_name="NetworkTraffic_Log.csv",
+                                    mime="text/csv",
+                                    use_container_width=True
+                                )
+                            else:
                                 traffic_placeholder.warning("No packets captured. Check your filter or network activity.")
                         except Exception as e:
                             st.error(f"Capture failed: {e}")
