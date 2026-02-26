@@ -454,7 +454,9 @@ with tab_local:
             c1, c2 = st.columns([1, 2])
             with c1:
                 st.markdown("#### Filter Settings")
-                bpf_filter = st.text_input("BPF Filter", placeholder="e.g., tcp, udp, icmp, port 80", help="Leave blank to capture all traffic.")
+                proto_filter = st.text_input("Protocol Filter", placeholder="e.g., tcp, udp, icmp", help="Leave blank to capture all protocols.")
+                port_filter = st.text_input("Port Filter", placeholder="e.g., 80, 443", help="Leave blank to capture all ports.")
+                ipHost_filter = st.text_input("IP/Host Filter", placeholder="e.g., 192.168.1.1 or example.com", help="Leave blank to capture all hosts.")
                 pkt_count = st.number_input("Packet Limit", min_value=1, max_value=500, value=25, help="Stop capturing after this many packets.")
                 
                 col_cap, col_clr = st.columns(2)
@@ -467,13 +469,27 @@ with tab_local:
             with c2:
                 st.markdown("#### Captured Traffic")
                 if start_capture:
-                    is_valid_filt, filt_err = validate_filter(bpf_filter)
-                    
+                    print("DEBUG INPUTS:")
+                    print(f"  proto  = '{proto_filter.strip()}'")
+                    print(f"  port   = '{port_filter.strip()}'")
+                    print(f"  host   = '{ipHost_filter.strip()}'")
+                    is_valid_filt, result = validate_filter(
+                        proto=proto_filter.strip(),      
+                        port=port_filter.strip(),         
+                        host=ipHost_filter.strip()
+                    )
+                    print(f"DEBUG RESULT: valid={is_valid_filt}, filter='{result}'")
                     if not is_valid_filt:
-                        st.error(f"Filter Error: {filt_err}")
+                        st.error(f"Filter Error: {result}")
                     else:
-                        st.info(f"Capturing up to {pkt_count} packets. Please wait...")
+                       
                         
+                        final_filter = result
+                        filter_display = f"`{final_filter}`" if final_filter else "all traffic (no filter)"
+                        st.info(f"Using filter: {filter_display}")
+
+                        st.info(f"Capturing up to {pkt_count} packets. Please wait...")
+
                         traffic_placeholder = st.empty()
                         captured_data = []
                         
@@ -503,18 +519,24 @@ with tab_local:
                             captured_data.append({
                                 "Time": pkt_info['timestamp'],
                                 "Proto": pkt_info['protocol'],
-                                "Src Vendor": vendor,           # <--- NEW 
-                                "Src MAC": src_mac,             # <--- NEWW
+                                "Src Vendor": vendor,        
+                                "Src MAC": src_mac,            
                                 "Src IP": pkt_info['src_ip'],
                                 "Dst IP": pkt_info['dst_ip'],
                                 "Dst Port": pkt_info['dst_port'],
                                 "Summary": pkt_info['summary']
                             })
-                            df = pd.DataFrame(captured_data)
-                            traffic_placeholder.dataframe(df, use_container_width=True)
+                          
+
+                            if len(captured_data) % 5 == 0 or len(captured_data) >= pkt_count:
+                                df = pd.DataFrame(captured_data)
+                                traffic_placeholder.dataframe(df, use_container_width=True)
 
                         try:
-                            start_packet_capture(filter_string=bpf_filter, packet_callback=update_traffic_ui, count=pkt_count)
+                            start_packet_capture(
+                                filter_string=final_filter, 
+                                packet_callback=update_traffic_ui, 
+                                count=pkt_count)
                             st.success(f"Capture finished. Collected {len(captured_data)} packets.")
                             
                             if captured_data:
