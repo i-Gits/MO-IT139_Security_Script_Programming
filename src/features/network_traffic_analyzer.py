@@ -75,9 +75,9 @@ def format_packet_info(packet):
     return packet_info
 
 
-def validate_filter(proto: str = "", port: str = "", host: str = "") -> tuple[bool, str]:
+def validate_filter(proto: str = "", port: str = "", host: str = "", src_ip: str = "", dst_ip: str = "") -> tuple[bool, str]:
     """
-    Builds and lightly validates a BPF filter string from the three GUI fields.
+    Builds and lightly validates a BPF filter string from the GUI fields.
     Returns (is_valid: bool, filter_or_error: str)
     """
     filter_parts = []
@@ -97,14 +97,32 @@ def validate_filter(proto: str = "", port: str = "", host: str = "") -> tuple[bo
             return False, f"Invalid port: '{port_clean}' – must be a number (example: 80)"
         filter_parts.append(f"port {port_clean}")
 
-    # Host / IP
+    # General Host / IP
     if host:
         host_clean = host.strip()
         try:
-            ip = socket.gethostbyname(host_clean)  # resolves domain → IP if needed
+            ip = socket.gethostbyname(host_clean)
             filter_parts.append(f"host {ip}")
-        except socket.gaierror:
+        except socket.gaierror as e:
             return False, f"Cannot resolve host/IP: '{host_clean}' ({e})"
+
+    # --- Source IP Filter ---
+    if src_ip:
+        src_clean = src_ip.strip()
+        try:
+            ip = socket.gethostbyname(src_clean)
+            filter_parts.append(f"src host {ip}")
+        except socket.gaierror as e:
+            return False, f"Cannot resolve Source IP/Host: '{src_clean}' ({e})"
+
+    # --- NEW: Destination IP Filter ---
+    if dst_ip:
+        dst_clean = dst_ip.strip()
+        try:
+            ip = socket.gethostbyname(dst_clean)
+            filter_parts.append(f"dst host {ip}")
+        except socket.gaierror as e:
+            return False, f"Cannot resolve Destination IP/Host: '{dst_clean}' ({e})"
 
     # Build final string
     if not filter_parts:
@@ -112,7 +130,7 @@ def validate_filter(proto: str = "", port: str = "", host: str = "") -> tuple[bo
 
     filter_str = " and ".join(filter_parts)
 
-    # Very basic validity check (can be expanded later)
+    # Very basic validity check
     if not any(kw in filter_str for kw in ['tcp','udp','icmp','ip','arp','port','host']):
         return False, "Filter has no recognizable BPF elements"
 
