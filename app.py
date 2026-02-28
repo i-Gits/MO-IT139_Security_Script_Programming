@@ -338,10 +338,15 @@ with tab_local:
                 start_scan = st.button("Start Scan")
             with col_clear:
                 if st.button("Clear Results", key="clear_ports"):
+                    # must pop from session state first, otherwise rerun just re-renders old data 
+                    st.session_state.pop('open_ports_found', None)
+                    st.session_state.pop('scan_host', None)
                     st.rerun()
                     
         with c2:
             st.markdown("#### Real-time Results")
+            results_placeholder = st.empty() 
+
             if start_scan:
                 is_valid_host, host_err = validate_host(target_host)
                 is_valid_range, p_start, p_end, range_err = validate_port_range(start_port_input, end_port_input)
@@ -355,7 +360,6 @@ with tab_local:
                     
                     progress_bar = st.progress(0)
                     status_text = st.empty()
-                    results_placeholder = st.empty()
                     
                     total_ports = (p_end - p_start) + 1
                     
@@ -419,22 +423,34 @@ with tab_local:
                         scan_port_range(target_host, p_start, p_end, callback=update_scan_ui)
                         status_text.success("Scan Complete!")
                         
-                        if open_ports_found:
-                            # --- EXPORT TO CSV FEATURE ---
-                            df_final = pd.DataFrame(open_ports_found)
-                            csv_data = df_final.to_csv(index=False).encode('utf-8')
-                            
-                            st.download_button(
-                                label="Export Scan Report (CSV)",
-                                data=csv_data,
-                                file_name=f"PortScan_{target_host}.csv",
-                                mime="text/csv",
-                                use_container_width=True
-                            )
-                        else:
+                        # save to session state so results survive reruns (e.g. after user clicks on export csv button)
+                        st.session_state['scan_host'] = target_host
+                        st.session_state['open_ports_found'] = open_ports_found
+
+                        if not open_ports_found:
                             results_placeholder.warning(f"No open ports found between {p_start} and {p_end}.")
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
+
+            # renders table and export button on every rerun, not just when scan button is clicked 
+            if st.session_state.get('open_ports_found'):
+                saved_host = st.session_state['scan_host']
+                open_ports_found = st.session_state['open_ports_found']
+
+                df_final = pd.DataFrame(open_ports_found)
+
+                # always re-render table from session state so it doesn't disappear on rerun 
+                results_placeholder.dataframe(df_final, use_container_width=True)
+
+                # --- EXPORT TO CSV FEATURE ---
+                csv_data = df_final.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label="Export Scan Report (CSV)",
+                    data=csv_data,
+                    file_name=f"PortScan_{saved_host}.csv",
+                    mime="text/csv",
+                    use_container_width=True
+                )
 
     # -----------------------------------
     # TOOL 2: TRAFFIC ANALYZER
@@ -464,10 +480,15 @@ with tab_local:
                     start_capture = st.button("Start Capture")
                 with col_clr:
                     if st.button("Clear Output", key="clear_traffic"):
+                        # must pop from session state first, otherwise rerun just re-renders old data 
+                        st.session_state.pop('captured_data', None)
+                        st.session_state.pop('raw_packets', None)                       
                         st.rerun()
 
             with c2:
                 st.markdown("#### Captured Traffic")
+                traffic_placeholder = st.empty() 
+
                 if start_capture:
                     print("DEBUG INPUTS:")
                     print(f"  proto  = '{proto_filter.strip()}'")
@@ -482,15 +503,12 @@ with tab_local:
                     if not is_valid_filt:
                         st.error(f"Filter Error: {result}")
                     else:
-                       
-                        
                         final_filter = result
                         filter_display = f"`{final_filter}`" if final_filter else "all traffic (no filter)"
                         st.info(f"Using filter: {filter_display}")
 
                         st.info(f"Capturing up to {pkt_count} packets. Please wait...")
 
-                        traffic_placeholder = st.empty()
                         captured_data = []
                         
                         # --- Mini MAC Vendor Database ---
@@ -512,7 +530,7 @@ with tab_local:
 
                         # callback for real-time ui updates
                         def update_traffic_ui(pkt_info):
-                            # Ggrab the MAC and look up the vendor
+                            # Grab the MAC and look up the vendor
                             src_mac = pkt_info.get('src_mac', 'N/A')
                             vendor = get_vendor(src_mac)
 
@@ -526,32 +544,68 @@ with tab_local:
                                 "Dst Port": pkt_info['dst_port'],
                                 "Summary": pkt_info['summary']
                             })
-                          
 
+                            # update table every 5 packets or on the last one
                             if len(captured_data) % 5 == 0 or len(captured_data) >= pkt_count:
                                 df = pd.DataFrame(captured_data)
                                 traffic_placeholder.dataframe(df, use_container_width=True)
 
                         try:
-                            start_packet_capture(
-                                filter_string=final_filter, 
-                                packet_callback=update_traffic_ui, 
-                                count=pkt_count)
+                            raw_packets = start_packet_capture(
+                                filter_string=final_filter,
+                                packet_callback=update_traffic_ui,
+                                count=pkt_count
+                            )
+                            # save to session state so results survive reruns
+                            st.session_state['captured_data'] = captured_data
+                            st.session_state['raw_packets'] = raw_packets
                             st.success(f"Capture finished. Collected {len(captured_data)} packets.")
-                            
-                            if captured_data:
-                                # --- EXPORT TO CSV FEATURE ---
-                                df_final = pd.DataFrame(captured_data)
-                                csv_data = df_final.to_csv(index=False).encode('utf-8')
-                                
-                                st.download_button(
-                                    label="Export Traffic Log (CSV)",
-                                    data=csv_data,
-                                    file_name="NetworkTraffic_Log.csv",
-                                    mime="text/csv",
-                                    use_container_width=True
-                                )
-                            else:
-                                traffic_placeholder.warning("No packets captured. Check your filter or network activity.")
+
                         except Exception as e:
                             st.error(f"Capture failed: {e}")
+
+                # renders table and export buttons on every rerun, not just after capture 
+                if st.session_state.get('captured_data'):
+                    captured_data = st.session_state['captured_data']
+                    raw_packets = st.session_state['raw_packets']
+
+                    df_final = pd.DataFrame(captured_data)
+                    df_final['Dst Port'] = df_final['Dst Port'].astype(str)
+
+                    traffic_placeholder.dataframe(df_final, use_container_width=True)
+
+                    # --- EXPORT TO CSV FEATURE ---
+                    csv_data = df_final.to_csv(index=False).encode('utf-8')
+                    st.download_button(
+                        label="Export Traffic Log (CSV)",
+                        data=csv_data,
+                        file_name="NetworkTraffic_Log.csv",
+                        mime="text/csv",
+                        use_container_width=True
+                    )
+
+                    # --- EXPORT TO PCAP FEATURE ---
+                    import tempfile
+                    from scapy.all import wrpcap
+
+                    # write raw scapy packets directly to temp file
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".pcap") as tmp:
+                        tmp_path = tmp.name
+                    wrpcap(tmp_path, raw_packets)
+
+                    # read temp file as bytes for download button
+                    with open(tmp_path, "rb") as f:
+                        pcap_bytes = f.read()
+                    os.remove(tmp_path)
+
+                    st.download_button(
+                        label="Export Traffic Log (PCAP)",
+                        data=pcap_bytes,
+                        file_name="NetworkTraffic_Log.pcap",
+                        mime="application/vnd.tcpdump.pcap",
+                        use_container_width=True
+                    )
+                else:
+                    # appears when a capture was just attempted and got nothing
+                    if start_capture:
+                        traffic_placeholder.warning("No packets captured. Check your filter or network activity.")

@@ -5,8 +5,6 @@ import sys
 import os   
 from datetime import datetime
 
-from numpy import e
-
 # Checks if Scapy is installed
 try:
     from scapy.all import sniff, IP, TCP, UDP, ICMP, Raw, Ether
@@ -171,7 +169,20 @@ def start_packet_capture(filter_string="", packet_callback=None, stop_callback=N
         if packet_callback:
             packet_info = format_packet_info(packet)
             packet_callback(packet_info)
-    
+
+    # Store raw packets
+    raw_packets = []  # Stores actual scapy packet objects for PCAP export
+
+    def packet_handler(packet):
+        if stop_callback and stop_callback():
+            return True
+        
+        raw_packets.append(packet)  # Save the raw packet before formatting
+        
+        if packet_callback:
+            packet_info = format_packet_info(packet)
+            packet_callback(packet_info)
+
     try:
         # Start sniffing
         sniff(
@@ -195,6 +206,8 @@ def start_packet_capture(filter_string="", packet_callback=None, stop_callback=N
             )
         else:
             raise Exception(f"Capture error: {error_details}")
+        
+    return raw_packets  # Added this so that it can return raw scapy packets for PCAP export
 
 
 def get_scapy_status():
