@@ -761,7 +761,7 @@ The Port Scanner and Traffic Analyzer use a mutual exclusion mechanism to preven
 | **MS1 (Final)** | Jan 27, 2026 | Bug fixes, security logging system |
 | **MS2 (GUI)** | Feb 1, 2026 | Migrated from Tkinter to Streamlit |
 | **MS2** | Feb 24, 2026 | Added Network Port Scanner, Traffic Analyzer |
-| **MS2-revised** | Mar 2, 2026 | PCAP export, no-limit scanning, pause/resume, BPF filters, src/dst IP filtering, process termination fixes |
+| **MS2-revised** | Mar 2, 2026 | PCAP export, no-limit scanning, stop/pause/resume, BPF filters, src/dst IP filtering, process termination fixes |
 
 <details>
 <summary> MS1 Details </summary>
