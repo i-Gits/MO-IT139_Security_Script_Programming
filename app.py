@@ -102,6 +102,19 @@ menu_selection = option_menu(
     }
 )
 
+# Stop processes on outer menu switch
+if 'last_menu' not in st.session_state:
+    st.session_state.last_menu = menu_selection
+if st.session_state.last_menu != menu_selection:
+    if st.session_state.get('capturing'):
+        st.session_state.capturing = False
+    if st.session_state.get('scan_running'):
+        cancel_event = st.session_state.get('_cancel_event')
+        if cancel_event:
+            cancel_event.set()
+        st.session_state.scan_running = False
+    st.session_state.last_menu = menu_selection
+
 # ==========================================
 # CATEGORY UNO: HOME PAGE
 # ==========================================
@@ -235,96 +248,216 @@ elif menu_selection == "Web Based Security Tools":
 # ==========================================
 elif menu_selection == "Local Security Tools":
     loc_t1, loc_t2 = st.tabs(["Network Port Scanner", "Traffic Analyzer"])
-    
+
+    # --- Initialize session state ---
+    if 'capturing' not in st.session_state:
+        st.session_state.capturing = False
+    if 'scan_running' not in st.session_state:
+        st.session_state.scan_running = False
+    if 'captured_data' not in st.session_state:
+        st.session_state.captured_data = []
+    if 'raw_packets' not in st.session_state:
+        st.session_state.raw_packets = []
+    if 'scan_results_live' not in st.session_state:
+        st.session_state.scan_results_live = []
+    if 'scan_progress' not in st.session_state:
+        st.session_state.scan_progress = 0
+    if 'scan_status' not in st.session_state:
+        st.session_state.scan_status = ""
+    if '_last_capture_ping' not in st.session_state:
+        st.session_state['_last_capture_ping'] = 0.0
+
+    if st.session_state.get('capturing'):
+        _ping = st.session_state['_last_capture_ping']
+        if _ping != 0.0 and (time.time() - _ping) > 30.0:
+            st.session_state.capturing = False
+
+    nps_is_running = st.session_state.get('scan_running', False)
+    nta_is_running = st.session_state.get('capturing', False)
+
     # -----------------------------------
     # TOOL 1: NETWORK PORT SCANNER
     # -----------------------------------
     with loc_t1:
+        nps_locked = nta_is_running
+
         st.markdown("### Network Port Scanner")
         st.caption("Discover open ports and services on a target machine.")
+
+        if nps_locked:
+            st.warning(
+                "⚠️ **Network Traffic Analyzer is active.** "
+                "Switch to the Traffic Analyzer tab and click ⏸ Pause first.",
+                icon="🔒"
+            )
+
         c1, c2 = st.columns([1, 2])
 
         with c1:
             st.markdown("#### Configuration")
-            target_host = st.text_input("Target Host (IP or Domain)", value="127.0.0.1")
-            preset = st.selectbox("Port Presets", list(PORT_PRESETS.keys()))
-            start_port_input = st.text_input("Start Port", value=PORT_PRESETS[preset]['start'])
-            end_port_input = st.text_input("End Port", value=PORT_PRESETS[preset]['end'])
+            target_host = st.text_input("Target Host (IP or Domain)", value="127.0.0.1", disabled=nps_locked)
+            preset = st.selectbox("Port Presets", list(PORT_PRESETS.keys()), disabled=nps_locked)
+            start_port_input = st.text_input("Start Port", value=PORT_PRESETS[preset]['start'], disabled=nps_locked)
+            end_port_input = st.text_input("End Port", value=PORT_PRESETS[preset]['end'], disabled=nps_locked)
             st.caption(f"ℹ️ *{PORT_PRESETS[preset]['description']}*")
-            
-            col_scan, col_clear, col_empty = st.columns(3)
-            
+
+            col_scan, col_stop_scan, col_clear = st.columns(3)
             with col_scan:
-                start_scan = st.button("▶ Start Scan", use_container_width=True)
+                start_scan = st.button("▶ Start Scan", use_container_width=True,
+                                       disabled=(nps_locked or nps_is_running))
+            with col_stop_scan:
+                if st.button("⏹ Stop Scan", use_container_width=True, disabled=not nps_is_running):
+                    _ce = st.session_state.get('_cancel_event')
+                    if _ce:
+                        _ce.set()
+                    st.session_state.scan_running = False
+                    st.session_state.scan_status = ""
+                    st.rerun()
             with col_clear:
-                if st.button("🗑 Clear Results", key="clear_ports", use_container_width=True):
-                    # must pop from session state first, otherwise rerun just re-renders old data 
+                if st.button("🗑 Clear Results", key="clear_ports", use_container_width=True,
+                             disabled=(nps_locked or nps_is_running)):
                     st.session_state.pop('open_ports_found', None)
                     st.session_state.pop('scan_host', None)
+                    st.session_state.scan_running = False
+                    st.session_state.scan_results_live = []
+                    st.session_state.scan_progress = 0
+                    st.session_state.scan_status = ""
+                    if '_cancel_event' in st.session_state:
+                        st.session_state['_cancel_event'].set()
                     st.rerun()
-                    
+
         with c2:
             st.markdown("#### Real-time Results")
-            results_placeholder = st.empty() 
+            results_placeholder = st.empty()
 
-            if start_scan:
+            if start_scan and not nps_locked:
                 is_valid_host, host_err = validate_host(target_host)
                 is_valid_range, p_start, p_end, range_err = validate_port_range(start_port_input, end_port_input)
-                
-                if not is_valid_host: st.error(f"Host Error: {host_err}")
-                elif not is_valid_range: st.error(f"Range Error: {range_err}")
+
+                if not is_valid_host:
+                    st.error(f"Host Error: {host_err}")
+                elif not is_valid_range:
+                    st.error(f"Range Error: {range_err}")
                 else:
-                    st.info(f"Scanning **{target_host}** from port {p_start} to {p_end}...")
+                    import threading
 
-                    st.warning("**DO NOT SWITCH TABS!** Navigating away will instantly kill the scan.", icon="⚠️")
+                    cancel_event = threading.Event()
+                    thread_results = []
+                    thread_state = {"progress": 0.0, "status": "scanning"}
 
-                    progress_bar = st.progress(0)
-                    status_text = st.empty()
-                    
+                    st.session_state['_cancel_event'] = cancel_event
+                    st.session_state['_thread_results'] = thread_results
+                    st.session_state['_thread_state'] = thread_state
+                    st.session_state.scan_running = True
+                    st.session_state.scan_results_live = []
+                    st.session_state.scan_progress = 0
+                    st.session_state.scan_status = "scanning"
+                    st.session_state.pop('open_ports_found', None)
+                    st.session_state.pop('scan_host', None)
+
                     PORT_DESCRIPTIONS = {
-                        20: "FTP Data Transfer", 21: "FTP Command Control", 22: "Secure Shell (SSH)", 23: "Telnet", 25: "SMTP",
-                        53: "DNS", 67: "DHCP Server", 68: "DHCP Client", 69: "TFTP", 80: "HTTP", 88: "Kerberos", 110: "POP3",
-                        123: "NTP", 143: "IMAP", 161: "SNMP", 194: "IRC", 389: "LDAP", 443: "HTTPS", 445: "SMB",
+                        20: "FTP Data Transfer", 21: "FTP Command Control", 22: "Secure Shell (SSH)",
+                        23: "Telnet", 25: "SMTP", 53: "DNS", 67: "DHCP Server", 68: "DHCP Client",
+                        69: "TFTP", 80: "HTTP", 88: "Kerberos", 110: "POP3", 123: "NTP", 143: "IMAP",
+                        161: "SNMP", 194: "IRC", 389: "LDAP", 443: "HTTPS", 445: "SMB",
                         3389: "RDP - Remote Desktop", 5060: "SIP"
                     }
-
                     total_ports = (p_end - p_start) + 1
-                    scan_state = {"count": 0} 
-                    open_ports_found = []
-                    
-                    def update_scan_ui(port, is_open):
-                        scan_state["count"] += 1
-                        progress_bar.progress(min(scan_state["count"] / total_ports, 1.0))
-                        status_text.text(f"Scanning port {port}...")
-                        if is_open:
-                            desc = PORT_DESCRIPTIONS.get(port, "Dynamic/Private Port")
-                            open_ports_found.append({"Port": port, "Service": get_service_name(port), "Description": desc, "Status": "OPEN"})
-                            results_placeholder.dataframe(pd.DataFrame(open_ports_found), use_container_width=True)
 
-                    try:
-                        scan_port_range(target_host, p_start, p_end, callback=update_scan_ui)
-                        status_text.success("Scan Complete!")
+                    def run_scan():
+                        count = [0]
+
+                        def callback(port, is_open):
+                            if cancel_event.is_set():
+                                return
+                            count[0] += 1
+                            thread_state["progress"] = min(count[0] / total_ports, 1.0)
+                            if is_open:
+                                desc = PORT_DESCRIPTIONS.get(port, "Dynamic/Private Port")
+                                thread_results.append({
+                                    "Port": port,
+                                    "Service": get_service_name(port),
+                                    "Description": desc,
+                                    "Status": "OPEN"
+                                })
+
+                        scan_port_range(
+                            target_host, p_start, p_end,
+                            callback=callback,
+                            cancel_check=lambda: cancel_event.is_set()
+                        )
+                        thread_state["status"] = "cancelled" if cancel_event.is_set() else "done"
+
+                    threading.Thread(target=run_scan, daemon=True, name="run_scan").start()
+                    st.rerun()
+
+            if nps_is_running:
+                thread_state = st.session_state.get('_thread_state', {})
+                thread_results = st.session_state.get('_thread_results', [])
+
+                st.session_state.scan_progress = thread_state.get("progress", 0)
+                st.session_state.scan_results_live = list(thread_results)
+
+                status = thread_state.get("status", "scanning")
+
+                if status == "scanning":
+                    st.warning(
+                        "🚨 **DO NOT SWITCH TO ANOTHER TOOLS PAGE (e.g., Web Based Security Tools)!** "
+                        "Switching to another page will auto-stop your scan.",
+                        icon="⚠️"
+                    )
+                    st.progress(
+                        st.session_state.scan_progress,
+                        text=f"Scanning ports... {int(st.session_state.scan_progress * 100)}%"
+                    )
+                    if st.session_state.scan_results_live:
+                        results_placeholder.dataframe(
+                            pd.DataFrame(st.session_state.scan_results_live),
+                            use_container_width=True
+                        )
+                else:
+                    st.session_state.scan_running = False
+                    st.session_state.scan_status = status
+                    if status == "done":
                         st.session_state['scan_host'] = target_host
-                        st.session_state['open_ports_found'] = open_ports_found
-                        if not open_ports_found: results_placeholder.warning(f"No open ports found between {p_start} and {p_end}.")
-                    except Exception as e:
-                        st.error(f"An error occurred: {e}")
+                        st.session_state['open_ports_found'] = list(thread_results)
+
+            if st.session_state.get('scan_status') == 'done' and not st.session_state.get('open_ports_found'):
+                st.info("Scan complete — no open ports found in the specified range.")
+                st.session_state.scan_status = ""
 
             if st.session_state.get('open_ports_found'):
                 df_final = pd.DataFrame(st.session_state['open_ports_found'])
                 results_placeholder.dataframe(df_final, use_container_width=True)
                 csv_data = df_final.to_csv(index=False).encode('utf-8')
-                st.download_button("Export Scan Report (CSV)", data=csv_data, file_name=f"PortScan_{st.session_state['scan_host']}.csv", mime="text/csv", use_container_width=True)
+                _, dl_col, _ = st.columns([1, 2, 1])
+                with dl_col:
+                    st.download_button(
+                        "📥 Export Scan Report (CSV)",
+                        data=csv_data,
+                        file_name=f"PortScan_{st.session_state['scan_host']}.csv",
+                        mime="text/csv",
+                        use_container_width=True
+                    )
 
     # -----------------------------------
     # TOOL 2: TRAFFIC ANALYZER
     # -----------------------------------
     with loc_t2:
+        nta_locked = nps_is_running
+
         st.markdown("### Network Traffic Analyzer")
         st.caption("Capture and analyze network packets in real-time. (Requires Scapy & Admin privileges!)")
-        
+
+        if nta_locked:
+            st.warning(
+                "⚠️ **Network Port Scanner is active.** "
+                "Switch to the Network Port Scanner tab and click ⏹ Stop Scan first.",
+                icon="🔒"
+            )
+
         scapy_ok, privs_ok, status_msg = get_scapy_status()
-        
+
         if not scapy_ok or not privs_ok:
             st.error(f"⚠️ **System Check Failed:** {status_msg}")
         else:
@@ -332,69 +465,65 @@ elif menu_selection == "Local Security Tools":
 
             with c1:
                 st.markdown("#### Filter Settings")
-                proto_filter = st.text_input("Protocol Filter", placeholder="e.g., tcp, udp, icmp")
-                port_filter = st.text_input("Port Filter", placeholder="e.g., 80, 443")
-                ipHost_filter = st.text_input("General IP/Host Filter", placeholder="e.g., 192.168.1.1")
-                
-                # --- NEW: Source & Destination Filters ---
+                proto_filter = st.text_input("Protocol Filter", placeholder="e.g., tcp, udp, icmp", disabled=nta_locked)
+                port_filter = st.text_input("Port Filter", placeholder="e.g., 80, 443", disabled=nta_locked)
+                ipHost_filter = st.text_input("General IP/Host Filter", placeholder="e.g., 192.168.1.1", disabled=nta_locked)
+
                 col_src, col_dst = st.columns(2)
                 with col_src:
-                    src_filter = st.text_input("Source IP", placeholder="e.g., 10.0.0.5")
+                    src_filter = st.text_input("Source IP", placeholder="e.g., 10.0.0.5", disabled=nta_locked)
                 with col_dst:
-                    dst_filter = st.text_input("Destination IP", placeholder="e.g., 8.8.8.8")
-                
-                pkt_count = st.number_input("Packet Limit", min_value=0, max_value=10000, value=0, help="Set to 0 for NO LIMIT scanning.")
-                
-                if 'capturing' not in st.session_state: st.session_state.capturing = False
-                if 'captured_data' not in st.session_state: st.session_state.captured_data = []
-                if 'raw_packets' not in st.session_state: st.session_state.raw_packets = []
+                    dst_filter = st.text_input("Destination IP", placeholder="e.g., 8.8.8.8", disabled=nta_locked)
 
-                
+                pkt_count = st.number_input("Packet Limit", min_value=0, max_value=10000, value=0,
+                                            help="Set to 0 for NO LIMIT scanning.", disabled=nta_locked)
+
                 col_cap, col_pause, col_clr = st.columns(3)
                 with col_cap:
                     btn_label = "▶ Resume" if st.session_state.captured_data else "▶ Start"
-                    if st.button(btn_label, disabled=st.session_state.capturing, use_container_width=True):
+                    if st.button(btn_label, disabled=(nta_is_running or nta_locked), use_container_width=True):
                         st.session_state.capturing = True
+                        st.session_state['_last_capture_ping'] = time.time()
                         st.rerun()
                 with col_pause:
-                    if st.button("⏸ Pause", disabled=not st.session_state.capturing, use_container_width=True):
+                    if st.button("⏸ Pause", disabled=(not nta_is_running or nta_locked), use_container_width=True):
                         st.session_state.capturing = False
                         st.rerun()
                 with col_clr:
-                    if st.button("🗑 Clear Output", disabled=st.session_state.capturing, use_container_width=True):
+                    if st.button("🗑 Clear Output", disabled=(nta_is_running or nta_locked), use_container_width=True):
                         st.session_state.captured_data = []
                         st.session_state.raw_packets = []
                         st.rerun()
 
             with c2:
                 st.markdown("#### Captured Traffic")
-                traffic_placeholder = st.empty() 
+                traffic_placeholder = st.empty()
 
                 if st.session_state.captured_data:
-                    df_final = pd.DataFrame(st.session_state.captured_data)
-                    df_final['Dst Port'] = df_final['Dst Port'].astype(str)
-                    df_final = df_final.iloc[::-1].reset_index(drop=True)
-                    traffic_placeholder.dataframe(df_final, use_container_width=True)
+                    df_show = pd.DataFrame(st.session_state.captured_data)
+                    df_show['Dst Port'] = df_show['Dst Port'].astype(str)
+                    df_show = df_show.iloc[::-1].reset_index(drop=True)
+                    traffic_placeholder.dataframe(df_show, use_container_width=True)
 
-                if st.session_state.capturing:
-                    st.warning("🚨 **DO NOT SWITCH TABS!** Navigating away from this page will instantly kill your capture and clear unsaved data.", icon="⚠️")
-                    
-                   
+                if st.session_state.capturing and not nta_locked:
+                    st.warning(
+                        "🚨 **DO NOT SWITCH TO ANOTHER TOOLS PAGE (e.g., Web Based Security Tools)!** "
+                        "Switching to another page will auto-stop your capture.",
+                        icon="⚠️"
+                    )
+
                     is_valid_filt, result = validate_filter(
-                        proto=proto_filter, 
-                        port=port_filter, 
+                        proto=proto_filter,
+                        port=port_filter,
                         host=ipHost_filter,
                         src_ip=src_filter,
                         dst_ip=dst_filter
                     )
-                    
-                    
                     final_filter = result if is_valid_filt else ""
-                    
-                    st.info("🔄 Capturing packets... Click '⏸ Pause' to pause, or switch tabs to exit.")
+                    st.info("🔄 Capturing packets... Click '⏸ Pause' to pause.")
 
                     MAC_VENDORS = {
-                        "00:50:56": "VMware", "00:15:5D": "Microsoft", "00:1A:11": "Google", 
+                        "00:50:56": "VMware", "00:15:5D": "Microsoft", "00:1A:11": "Google",
                         "8C:8C:AA": "Apple", "28:16:A8": "Intel", "00:24:E8": "Cisco"
                     }
 
@@ -408,33 +537,37 @@ elif menu_selection == "Local Security Tools":
                         })
 
                     try:
-                        batch_size = min(5, pkt_count - len(st.session_state.captured_data)) if pkt_count > 0 else 5
-                        batch_raw = start_packet_capture(filter_string=final_filter, packet_callback=update_traffic_ui, count=batch_size)
+                        st.session_state['_last_capture_ping'] = time.time()
+
+                        if pkt_count > 0:
+                            remaining = pkt_count - len(st.session_state.captured_data)
+                            batch_size = min(5, remaining)
+                        else:
+                            batch_size = 5
+
+                        batch_raw = start_packet_capture(
+                            filter_string=final_filter,
+                            packet_callback=update_traffic_ui,
+                            count=batch_size
+                        )
+                        st.session_state['_last_capture_ping'] = time.time()
                         st.session_state.raw_packets.extend(batch_raw)
-                        
-                        # --- re-render the table IMMEDIATELY before exiting the loop ---
+
                         if st.session_state.captured_data:
-                            df_updated = pd.DataFrame(st.session_state.captured_data)
-                            df_updated['Dst Port'] = df_updated['Dst Port'].astype(str)
-                            
-                            # --- flip table so newest is at the top! ---
-                            df_updated = df_updated.iloc[::-1].reset_index(drop=True)
-                            
-                            traffic_placeholder.dataframe(df_updated, use_container_width=True)
-                        
+                            df_live = pd.DataFrame(st.session_state.captured_data)
+                            df_live['Dst Port'] = df_live['Dst Port'].astype(str)
+                            df_live = df_live.iloc[::-1].reset_index(drop=True)
+                            traffic_placeholder.dataframe(df_live, use_container_width=True)
+
                         if pkt_count > 0 and len(st.session_state.captured_data) >= pkt_count:
                             st.session_state.capturing = False
-                            st.success(f"Reached limit of {pkt_count} packets!")
-                        else:
-                            time.sleep(0.1) 
-                            st.rerun()
-                            
+                            st.success(f"✅ Reached limit of {pkt_count} packets!")
+
                     except Exception as e:
                         st.error(f"Capture failed: {e}")
                         st.session_state.capturing = False
-                
-                # --- EXPORT BUTTONS ---
-                if not st.session_state.capturing and st.session_state.captured_data:
+
+                if not st.session_state.capturing and st.session_state.captured_data and not nta_locked:
                     dl_col1, dl_col2 = st.columns(2)
                     with dl_col1:
                         csv_data = pd.DataFrame(st.session_state.captured_data).to_csv(index=False).encode('utf-8')
@@ -445,3 +578,7 @@ elif menu_selection == "Local Security Tools":
                         with open(tmp_path, "rb") as f: pcap_bytes = f.read()
                         os.remove(tmp_path)
                         st.download_button("📥 Export PCAP", data=pcap_bytes, file_name="Traffic.pcap", mime="application/vnd.tcpdump.pcap", use_container_width=True)
+
+    if nps_is_running or nta_is_running:
+        time.sleep(0.3)
+        st.rerun()
