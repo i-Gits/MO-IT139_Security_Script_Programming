@@ -46,7 +46,9 @@ def format_packet_info(packet):
         if IP in packet:
             packet_info['src_mac'] = packet[Ether].src
             packet_info['dst_mac'] = packet[Ether].dst
-            
+            packet_info['src_ip'] = packet[IP].src
+            packet_info['dst_ip'] = packet[IP].dst
+
             # Checks protocol
             if TCP in packet:
                 packet_info['protocol'] = 'TCP'
