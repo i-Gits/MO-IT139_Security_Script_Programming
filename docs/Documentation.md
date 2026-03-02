@@ -1,6 +1,62 @@
-# Documentation
+# 📚 Technical Documentation
+**PASSECURIST - Security Script Programming**
 
-## Password Strength Analyzer
+> *"Welcome~!*
+
+---
+
+<details>
+<summary> 📂 Project Structure </summary>
+<br>
+
+```
+MO-IT139_Security_Script_Programming/
+│
+├── app.py                              # Streamlit main entry point with tabbed interface
+├── README.md                           # Project documentation
+│
+├── data/
+│   ├── dictionary.txt                  # Local word list for password strength checking (optional)
+│   ├── passwords.txt                   # Hash storage (NO raw passwords saved)
+│   └── security_log.txt                # Attack/sanitization event logs
+│
+├── docs/
+│   └── Documentation.md                # Technical documentation (you are here~!)
+│
+├── src/
+│   ├── main.py                         # Tkinter entry point (legacy, not used)
+│   │
+│   ├── features/
+│   │   ├── password_strength.py        # Password evaluation logic with veto checks
+│   │   ├── password_generator.py       # Secure password generation + SHA-256 hashing
+│   │   ├── webform_validator.py        # Form validation with XSS/SQL injection detection
+│   │   ├── network_port_scanner.py     # TCP port scanning logic
+│   │   └── network_traffic_analyzer.py # Packet capture with Scapy (requires sudo)
+│   │
+│   ├── gui/                            # Tkinter tabs (legacy, not used)
+│   │   ├── password_strength_tab.py    # Strength analyzer interface (legacy)
+│   │   ├── password_generator_tab.py   # Generator interface (legacy)
+│   │   ├── webform_validator_tab.py    # Form validator interface (legacy)
+│   │   ├── network_port_scanner_tab.py # Port scanner interface (legacy)
+│   │   ├── network_traffic_analyzer_tab.py # Traffic analyzer interface (legacy)
+│   │   └── styles.py                   # Application theme configuration (legacy)
+│   │
+│   └── utils/
+│       ├── dictionary.py               # Dictionary loading (local + NLTK)
+│       ├── genPassStorage.py           # Password hash storage (NO raw passwords)
+│       └── security_logger.py          # Security event logging (attacks, sanitization)
+│
+└── assets/
+    └── screenshots/                    # UI screenshots
+```
+
+</details>
+
+---
+
+<details>
+<summary> 🔐 Password Strength Analyzer </summary>
+<br>
 
 ### load_dictionary()
 **Purpose**: Loads a local dictionary file (dictionary.txt) into a Python list used to detect words inside passwords.
@@ -14,6 +70,7 @@
 - Filters words to keep only those with 4+ characters
 - Prints debug messages and returns a small fallback list when dictionary.txt is missing
 - Fallback words: ["apple", "computer", "dragon", "monkey", "secret"]
+- *Fun fact: these fallback words are surprisingly common in real passwords... please don't use them!*
 
 ---
 
@@ -30,8 +87,9 @@
 - Returns empty list [] if NLTK is not installed or corpus is missing
 - Does not automatically download corpus
 - Current implementation: `nltk` is imported at the top (unguarded)
-  - **Warning**: Code will crash if nltk is not installed
+  - **Warning**: Code will crash if nltk is not installed *(oops~)*
   - Future improvement: Guard the import for better error handling
+  - *Note to self: NLTK is optional but makes the dictionary WAY bigger*
 
 ---
 
@@ -71,10 +129,6 @@
 - Case-insensitive matching for both common passwords and dictionary words
 - Returns early with warning if input is empty
 
-**Where Used**: 
-- Button command in GUI
-- Enter key binding for quick analysis
-
 ---
 
 ### show_custom_warning(title, message)
@@ -91,9 +145,13 @@
 - Matches main application styling
 - Called when user submits empty input in evaluate_password_strength()
 
+</details>
+
 ---
 
-## Password Generator & Hasher
+<details>
+<summary> 🔑 Password Generator & Hasher </summary>
+<br>
 
 ### generate_password(length=12)
 **Purpose**: Generate a cryptographically secure password.
@@ -141,11 +199,15 @@
 
 **File Format**: `[timestamp] | hash # salt`
 
-**Security**: Raw password is NEVER written to disk, only hash and salt are stored.
+**Security**: Raw password is NEVER written to disk, only hash and salt are stored. *(and it should stay that way — please don't change this!)*
+
+</details>
 
 ---
 
-## Web Form Validator & Sanitizer
+<details>
+<summary> 📝 Web Form Validator & Sanitizer </summary>
+<br>
 
 ### validate_full_name(name)
 **Purpose**: Validate full name field with security checks.
@@ -236,9 +298,281 @@
 - `all_valid`: Boolean overall validity
 - `has_empty_fields`: Boolean if required fields missing
 
+</details>
+
 ---
 
-## Security Logger
+<details>
+<summary> 🔍 Network Port Scanner </summary>
+<br>
+
+### Overview
+Scans TCP ports on a target host to identify open/closed ports. Includes preset categories for common services (Web, Mail, Gaming, etc.).
+
+<!--*Like knocking on doors to see which ones are open~ except the doors are network ports and we're checking if services are running behind them. So the doors are port als, and if you knock and they're open you can get sucked right in to another dimension, ha! Kidding, you can choose to cross or not. Because the portal is open or you can throw in pebbles in the portal and maybe you'll find that this portal is the backdoor to the president's suite, or a suburban toilet*-->
+
+
+**File**: `src/features/network_port_scanner.py`
+
+**References**:
+- Common Ports: https://www.stationx.net/common-ports-cheat-sheet/
+- Steam Ports: https://help.steampowered.com/en/faqs/view/2EA8-4D75-DA21-31EB
+- Valorant Ports: https://support-valorant.riotgames.com/hc/en-us/articles/4402306473619
+
+---
+
+### scan_port(host, port, timeout=0.5)
+**Purpose**: Scan a single TCP port on the specified host.
+
+**Parameters**:
+- `host` (str): Target IP address or hostname
+- `port` (int): Port number to scan
+- `timeout` (float, default=0.5): Connection timeout in seconds
+
+**Returns**: Boolean (True if port is open, False if closed)
+
+**Details**:
+- Creates a TCP socket (AF_INET, SOCK_STREAM)
+- Uses connect_ex() which returns 0 if connection succeeds
+- Closes socket after each attempt
+- Returns False on any socket error
+
+---
+
+### scan_port_range(host, start_port, end_port, timeout=0.5, callback=None, cancel_check=None)
+**Purpose**: Scan a range of ports on the specified host.
+
+**Parameters**:
+- `host` (str): Target IP address or hostname
+- `start_port` (int): Starting port number
+- `end_port` (int): Ending port number (inclusive)
+- `timeout` (float, default=0.5): Connection timeout per port
+- `callback` (function, optional): Called after each port scan for real-time UI updates
+- `cancel_check` (function, optional): Called before each port — returns True to stop scan immediately
+
+**Returns**: Dictionary with keys:
+- `open`: List of open port numbers
+- `closed`: List of closed port numbers
+
+**Details**:
+- Iterates through port range sequentially
+- Calls callback(port, is_open) for each port scanned
+- Checks cancel_check() before each port; exits loop immediately if it returns True
+- Useful for real-time progress updates and safe mid-scan cancellation in GUI
+
+---
+
+### validate_host(host)
+**Purpose**: Validate if the host is reachable/resolvable.
+
+**Parameters**:
+- `host` (str): IP address or hostname to validate
+
+**Returns**: Tuple of (is_valid, error_message)
+- `is_valid` (bool): True if host is valid
+- `error_message` (str or None): Error description if invalid
+
+**Details**:
+- Uses socket.gethostbyname() to resolve hostname
+- Returns False with message if host is empty, unreachable, or invalid
+
+---
+
+### validate_port_range(start_str, end_str)
+**Purpose**: Validate port range input from user.
+
+**Parameters**:
+- `start_str` (str): Starting port as string
+- `end_str` (str): Ending port as string
+
+**Returns**: Tuple of (is_valid, start_port, end_port, error_message)
+
+**Validation Rules**:
+- Both values must be integers (no letters or symbols)
+- Range must be within 1-65535
+- Start port must be <= end port
+- Maximum range of 10,000 ports for performance *(any more and your computer will cry)*
+- Single port (start == end) is allowed
+
+---
+
+### get_service_name(port)
+**Purpose**: Get the service name for a known port number.
+
+**Parameters**:
+- `port` (int): Port number
+
+**Returns**: String (service name or "Unknown Service")
+
+**Details**:
+- Looks up port in PORT_SERVICE_MAP dictionary
+- Common services: HTTP(80), HTTPS(443), SSH(22), FTP(21), DNS(53), etc.
+
+---
+
+### PORT_PRESETS (Dictionary)
+**Purpose**: Predefined port categories for quick selection in UI.
+
+**Categories**:
+| Category | Ports | Description |
+|----------|-------|-------------|
+| Web Services | 80, 443 | HTTP and HTTPS |
+| Mail Services | 25, 110, 143 | SMTP, POP3, IMAP |
+| Remote Access & Management | 22, 23, 3389 | SSH, Telnet, RDP |
+| Directory / Authentication | 88, 389, 464, 636 | Kerberos, LDAP, LDAPS |
+| File Transfer & Sharing | 20, 21, 69, 445 | FTP, TFTP, SMB |
+| Network Core | 53, 67, 68, 123 | DNS, DHCP, NTP |
+| Network Management & Monitoring | 161 | SNMP |
+| Communication, VoIP, and Chat | 194, 1720, 5060, 5061 | IRC, H.323, SIP |
+| Legacy and Testing | 7, 23 | Echo, Telnet |
+| Steam | 80, 443, 27000-27100 | Steam platform |
+| Valorant | 80, 443, 7000-8000 | Valorant game |
+
+*Yes, we added gaming ports. Priorities~ *
+
+</details>
+
+---
+
+<details>
+<summary> 📡 Network Traffic Analyzer </summary>
+<br>
+
+### Overview
+Captures and analyzes network packets using Scapy. Requires administrator/root privileges. Supports BPF (Berkeley Packet Filter) for filtering traffic. Captured packets can be exported as CSV or PCAP.
+
+*BPF = Berkeley Packet Filter, w/c is basically a fancy way to say "filter what packets you want to see." Named after UC Berkeley where it was invented!*
+
+**File**: `src/features/network_traffic_analyzer.py`
+
+**Requirements**:
+- Scapy library (`pip install scapy`)
+- Admin/root privileges (sudo on macOS/Linux, Run as Administrator on Windows)
+
+*If it says "permission denied" > you forgot sudo! Don't worry, we've all been there~*
+
+---
+
+### check_privileges()
+**Purpose**: Check if the script is running with administrator/root privileges.
+
+**Parameters**: None
+
+**Returns**: Boolean (True if has privileges)
+
+**Details**:
+- Windows: Uses ctypes.windll.shell32.IsUserAnAdmin()
+- Linux/Mac: Uses os.geteuid() == 0
+
+---
+
+### format_packet_info(packet)
+**Purpose**: Format packet details for display in the UI.
+
+**Parameters**:
+- `packet`: Scapy packet object
+
+**Returns**: Dictionary with keys:
+- `timestamp`: Formatted timestamp (YYYY-MM-DD HH:MM:SS.mmm)
+- `protocol`: TCP, UDP, ICMP, or Other
+- `src_mac`: Source MAC address
+- `dst_mac`: Destination MAC address
+- `src_ip`: Source IP address
+- `dst_ip`: Destination IP address
+- `src_port`: Source port (TCP/UDP only)
+- `dst_port`: Destination port (TCP/UDP only)
+- `summary`: Brief packet description
+
+**Details**:
+- Extracts Ethernet, IP, TCP, UDP, ICMP layers
+- Handles missing layers gracefully (shows "N/A")
+- Catches parsing errors and includes in summary
+
+---
+
+### validate_filter(proto="", port="", host="", src_ip="", dst_ip="")
+**Purpose**: Build and validate a BPF (Berkeley Packet Filter) string from GUI fields.
+
+**Parameters**:
+- `proto` (str): Protocol filter (tcp, udp, icmp, ip, arp, ip6)
+- `port` (str): Port number filter
+- `host` (str): General host/IP filter
+- `src_ip` (str): Source IP filter
+- `dst_ip` (str): Destination IP filter
+
+**Returns**: Tuple of (is_valid, filter_or_error)
+- `is_valid` (bool): True if filter is valid
+- `filter_or_error` (str): BPF filter string if valid, error message if invalid
+
+**Details**:
+- Validates protocol against allowed list
+- Validates port is numeric
+- Resolves hostnames using socket.gethostbyname()
+- Combines filters with "and" operator
+- Returns empty string if no filters (captures all traffic)
+
+**Example Filters**:
+- `tcp port 80` - HTTP traffic only
+- `host 192.168.1.1` - Traffic to/from specific IP
+- `tcp and src host 10.0.0.5` - TCP from specific source
+- `tcp and dst host 8.8.8.8` - TCP destined for specific IP
+
+*Leave filter empty to capture EVERYTHING (but be ready for a LOT of packets!)*
+
+---
+
+### start_packet_capture(filter_string="", packet_callback=None, stop_callback=None, count=0)
+**Purpose**: Start capturing packets with the specified filter.
+
+**Parameters**:
+- `filter_string` (str): BPF filter string (empty = capture all)
+- `packet_callback` (function): Called for each captured packet with formatted packet info dict
+- `stop_callback` (function): Returns True to stop capture
+- `count` (int): Number of packets to capture per batch (0 = unlimited)
+
+**Returns**: List of raw Scapy packet objects (used for PCAP export)
+
+**Raises**:
+- `ImportError`: If Scapy is not installed
+- `PermissionError`: If not running with sufficient privileges
+- `ValueError`: If filter is invalid
+
+**Details**:
+- Checks Scapy availability and privileges before starting
+- Stores raw packets in a local list alongside formatted display data
+- Returns raw packet list so the caller (app.py) can accumulate them across batches for PCAP export
+- Uses Scapy's sniff() with stop_filter to support mid-capture stops
+- In app.py, capture runs in batches of 5 packets per Streamlit rerun cycle, allowing pause/resume without blocking the UI thread
+- Provides platform-specific error messages for privilege issues
+
+**Batch Capture Behavior (app.py)**:
+- Each Streamlit rerun calls start_packet_capture() with count=5 (or remaining count if packet limit is set)
+- Raw packets are accumulated in st.session_state.raw_packets across reruns
+- Pause stops the rerun loop; Resume restarts it from where it left off
+- A ping timestamp (st.session_state._last_capture_ping) is updated each batch; if 30 seconds pass without a ping, capture is automatically stopped as a safety timeout
+
+---
+
+### get_scapy_status()
+**Purpose**: Get Scapy installation and privilege status for UI display.
+
+**Parameters**: None
+
+**Returns**: Tuple of (scapy_installed, has_privileges, status_message)
+
+**Status Messages**:
+- "Scapy not installed. Install with: pip install scapy"
+- "Administrator privileges required (Run as Administrator)"
+- "Root privileges required (use sudo)"
+- "Ready to capture packets"
+
+</details>
+
+---
+
+<details>
+<summary> 📋 Security Logger </summary>
+<br>
 
 ### log_threat(field_name, threat_type, original_value, sanitized_value, detected_patterns)
 **Purpose**: Log security threats (XSS, SQL injection, etc.) to file.
@@ -254,12 +588,6 @@
 
 **File Location**: `data/security_log.txt`
 
-**Details**:
-- Creates timestamped entries with threat details
-- Truncates long values to 100 characters in log
-- Uses separator lines (=) for visual distinction
-- Silent operation (users never notified)
-
 ---
 
 ### log_sanitization(field_name, original_value, sanitized_value, reason)
@@ -273,14 +601,6 @@
 
 **Returns**: Boolean (True if logged successfully)
 
-**File Location**: `data/security_log.txt`
-
-**Details**:
-- Records before/after values for audit purposes
-- Includes reason for sanitization
-- Appends to existing log file
-- Used for both valid fields with sanitization and invalid fields with suspicious content
-
 ---
 
 ### log_validation_summary(form_data, results)
@@ -291,15 +611,6 @@
 - `results` (dict): Validation results from validate_and_sanitize_form()
 
 **Returns**: Boolean (True if logged successfully)
-
-**File Location**: `data/security_log.txt`
-
-**Details**:
-- Creates comprehensive summary with all field statuses
-- Shows overall pass/fail status
-- Lists all sanitization actions performed
-- Uses separator lines (*) for visual distinction
-- Called automatically on every form validation
 
 ---
 
@@ -313,38 +624,46 @@
 
 **Returns**: Boolean (True if logged successfully)
 
-**File Location**: `data/security_log.txt`
+---
 
-**Details**:
-- Creates high-visibility entries
-- Truncates long values to 150 characters in log
-- Used for: SQL injection, XSS attempts, disposable emails, malicious content
-- Triggered by validation failures with security implications
+### Log File Format Examples
+
+**Attack Attempts:**
+```
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+[2026-01-27 18:30:45] !!! ATTACK ATTEMPT DETECTED !!! 
+  Field: Message
+  Attack Type: SQL INJECTION ATTEMPT
+  Malicious Input: SELECT * FROM users; DROP TABLE users;
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+```
+
+**Validation Summary:**
+```
+**********************************************************************
+[2026-01-27 18:32:00] FORM VALIDATION SUMMARY
+**********************************************************************
+  ✓ Full Name: Valid
+  ✓ Email: Valid (sanitized)
+  ✗ Username: Invalid - Username must be at least 4 characters long
+  ✓ Message: Valid
+
+  Overall Status: FAILED
+**********************************************************************
+```
+
+</details>
 
 ---
 
-### ensure_log_dir()
-**Purpose**: Create data directory if it doesn't exist.
-
-**Parameters**: None
-
-**Returns**: None
-
-**Details**:
-- Called internally by all logging functions
-- Uses `os.makedirs()` with `exist_ok=True`
-- Ensures log file location is available before writing
-
----
-
-## Global Variables
+<details>
+<summary> 🎨 Global Variables & Constants </summary>
+<br>
 
 ### DICTIONARY_WORDS
 Combined list from `load_dictionary()` + `load_nltk_words()`, deduplicated and sorted.
 
 **Usage**: Used to find dictionary words inside passwords
-
-**Performance Note**: Large NLTK corpus may slow down password checking due to substring matching loop
 
 ---
 
@@ -353,30 +672,31 @@ Short hardcoded list of very common passwords that immediately mark a password a
 
 **Examples**: "password", "123456", "qwerty", "admin", "letmein"
 
+*Seriously, if you're using any of these... please try not to...*
+
 ---
 
 ### Color Constants
-Used to color-code verdicts in the GUI:
-- `COLOR_WEAK = "#ef4444"` (red)
-- `COLOR_MOD = "#f59e0b"` (orange)
-- `COLOR_STRONG = "#22c55e"` (green)
+| Constant | Value | Usage |
+|----------|-------|-------|
+| `COLOR_WEAK` | `#ef4444` | Red - weak passwords |
+| `COLOR_MOD` | `#f59e0b` | Orange - moderate passwords |
+| `COLOR_STRONG` | `#22c55e` | Green - strong passwords |
 
 ---
 
 ### SQL_KEYWORDS
-List of SQL keywords to detect injection attempts in messages.
+List of SQL keywords to detect injection attempts: SELECT, DROP, INSERT, DELETE, UPDATE, UNION, etc.
 
 ---
 
 ### DANGEROUS_PATTERNS
-Regex patterns to detect XSS and malicious code in messages.
+Regex patterns to detect XSS and malicious code: `<script>`, `javascript:`, `onclick=`, etc.
 
 ---
 
 ### DISPOSABLE_DOMAINS
-List of temporary/disposable email service domains to block.
-
-**Examples**: 
+Blocked temporary email services:
 - yopmail.com
 - mailinator.com
 - temp-mail.org
@@ -385,14 +705,19 @@ List of temporary/disposable email service domains to block.
 - trashmail.com
 - throwaway.email
 
-**Usage**: Checked during email validation to prevent temporary email addresses
+
+</details>
 
 ---
 
-## GUI Features
+<details>
+<summary> 🖥️ GUI Features </summary>
+<br>
 
 ### Enter Key Binding
 `root.bind_all("<Return>", ...)` allows users to press Enter to trigger password analysis without clicking the button.
+
+*bec clicking buttons is so 90s~ just hit enter!*
 
 ---
 
@@ -412,89 +737,71 @@ Web form validator shows:
 
 **Note**: Sanitization warnings are no longer shown to users. All sanitization is logged silently to `data/security_log.txt` for audit purposes.
 
----
-
-## Security Logging System
-
-### Overview
-All validation events, sanitization actions, and security threats are automatically logged to `data/security_log.txt`. This provides an audit trail for security monitoring without exposing technical details to end users.
-
-### Log File Format
-
-**Attack Attempts:**
-```
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-[2026-01-27 18:30:45] !!! ATTACK ATTEMPT DETECTED !!! 
-  Field: Message
-  Attack Type: SQL INJECTION ATTEMPT
-  Malicious Input: SELECT * FROM users; DROP TABLE users;
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-```
-
-**Sanitization Actions:**
-```
-[2026-01-27 18:31:20] SANITIZATION - Username
-  Original: user@name!
-  Sanitized: username
-  Reason: Invalid input rejected: Invalid characters: '!', '@'
-```
-
-**Validation Summary:**
-```
-**********************************************************************
-[2026-01-27 18:32:00] FORM VALIDATION SUMMARY
-**********************************************************************
-  ✓ Full Name: Valid
-  ✓ Email: Valid (sanitized)
-  ✗ Username: Invalid - Username must be at least 4 characters long
-  ✓ Message: Valid
-
-  Overall Status: FAILED
-
-  Sanitization Actions:
-    - Email: Sanitized (normalized to standard format)
-**********************************************************************
-```
-
-### What Gets Logged
-
-1. **Attack Attempts**: SQL injection, XSS, disposable emails
-2. **Field Sanitization**: Invalid character removal, format normalization
-3. **Validation Results**: Per-field status and overall form status
-4. **Threat Details**: Original malicious input and detected patterns
-
-### User Experience
-
-- Users see only clean error messages in the UI
-- No mention of logs or sanitization details to users
-- All security events tracked silently in background
-- Log file accessible only to administrators/developers
+*users don't need to know the scary technical details — they just need to know if it's valid or not~ keeping it simple! ✨abstraction✨ *
 
 ---
 
-## Version History
+### Tool Mutex (Local Security Tools)
+The Port Scanner and Traffic Analyzer use a mutual exclusion mechanism to prevent both tools from running simultaneously:
+- When a scan is active, the Traffic Analyzer tab shows a lock warning and all its controls are disabled
+- When a capture is active, the Port Scanner tab shows a lock warning and all its controls are disabled
+- Switching between the top-level navigation categories (e.g., to Web Based Security Tools) automatically stops any active scan or capture
 
-### Version 1.0
-- Dark blue themed GUI (button-click to analyze)
-- Veto logic for common passwords and dictionary words
-- No NLTK integration
-- Custom modal popup with white default theme
-- 7-rule scoring system
-- Debug printing of detected dictionary words
+</details>
 
-### Version 2.0 (Current)
-**Added/Configured**:
-- NLTK integration (optional corpus loader expands dictionary coverage)
-- Custom modal popup with dark blue theme (matches main GUI)
-- Password Generator & Hasher tab
-- Web Form Validator & Sanitizer tab
-- Dictionary-based password checks (local + NLTK)
-- Combined structural + veto checks for nuanced results
-- Enter key binding for improved usability
-- Conditional scrollbars across all tabs
-- Inline validation showing ALL violations per field
-- Green success indicators for valid fields
-- Security logging system & sanitization audit trail in log file (`security_logger.py`)
-- Disposable email domain blocking (7 domains)
-- Silent threat logging (users see clean errors only)
-- Attack attempt tracking (SQL injection, XSS)
+---
+
+<details>
+<summary> 📜 Version History </summary>
+<br>
+
+| Version | Date | Changes |
+|---------|------|---------|
+| **MS1 (Draft)** | Jan 26, 2026 | Password Strength Analyzer, Password Generator, Web Form Validator |
+| **MS1 (Final)** | Jan 27, 2026 | Bug fixes, security logging system |
+| **MS2 (GUI)** | Feb 1, 2026 | Migrated from Tkinter to Streamlit |
+| **MS2** | Feb 24, 2026 | Added Network Port Scanner, Traffic Analyzer |
+| **MS2-revised** | Mar 2, 2026 | PCAP export, no-limit scanning, pause/resume, BPF filters, src/dst IP filtering, process termination fixes |
+
+<details>
+<summary> MS1 Details </summary>
+
+**Core Features (Jan 26, 2026):**
+- Password Strength Analyzer with 7-point scoring system
+- Password Generator & Hasher with SHA-256
+- Web Form Validator & Sanitizer with XSS/SQL injection protection
+
+**Bug Fixes (Jan 27, 2026):**
+- Fixed duplicate space error in username validation
+- Improved error message display (quoted special characters)
+- Strict single-space formatting for full names
+- Implemented security logging system
+
+</details>
+
+<details>
+<summary> MS2 Details </summary>
+
+**Network Features (Feb 24, 2026):**
+- Network Port Scanner with TCP scanning
+- Network Traffic Analyzer with Scapy
+
+**Revisions (Mar 2, 2026):**
+- PCAP export functionality
+- No-limit packet capture option
+- Pause/Resume controls
+- BPF filter support
+- Source/Destination IP filtering
+- Fixed process termination on tab/menu switch
+- Fixed scan stop/cancel event handling
+- Fixed capture ping timeout safeguard
+
+</details>
+
+</details>
+
+---
+
+*made with 💻 ♡ and probably too much coffee~ ☕*
+
+*BSIT-S31101 | MO-IT139 Security Script Programming | 2026*

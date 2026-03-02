@@ -44,10 +44,10 @@ def format_packet_info(packet):
     try:
         # Checks if packet has IP layer
         if IP in packet:
-            src_ip = packet[IP].src
-            dst_ip = packet[IP].dst
-            packet_info['src_ip'] = src_ip
-            packet_info['dst_ip'] = dst_ip
+            packet_info['src_mac'] = packet[Ether].src
+            packet_info['dst_mac'] = packet[Ether].dst
+            packet_info['src_ip'] = packet[IP].src # adds source IP to packet info formatting
+            packet_info['dst_ip'] = packet[IP].dst # adds destination IP to packet info formatting
             
             # Checks protocol
             if TCP in packet:
@@ -117,7 +117,7 @@ def validate_filter(proto: str = "", port: str = "", host: str = "", src_ip: str
         except socket.gaierror as e:
             return False, f"Cannot resolve Source IP/Host: '{src_clean}' ({e})"
 
-    # --- NEW: Destination IP Filter ---
+    # --- Destination IP Filter ---
     if dst_ip:
         dst_clean = dst_ip.strip()
         try:

@@ -168,11 +168,13 @@ def scan_port(host, port, timeout=0.5):
         return False
 
 
-def scan_port_range(host, start_port, end_port, timeout=0.5, callback=None):
+def scan_port_range(host, start_port, end_port, timeout=0.5, callback=None, cancel_check=None):
     """Scan a range of ports on the specified host"""
     results = {'open': [], 'closed': []}
     
     for port in range(start_port, end_port + 1):
+        if cancel_check and cancel_check(): # checks if user has switched tabs, if so, scan immediately stops 
+            break
         is_open = scan_port(host, port, timeout)
         
         # Add to results
