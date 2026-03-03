@@ -1,85 +1,272 @@
-# MO-IT142 Draft of Milestone 1: Web Security Tool BSIT -S31101 Delas Armas, J., Encillo, C., Samaniego, M., Tantoco, H.
-Security Script Programming 2026 
+<!--- 
+MO-IT142 Security Script Programming
+PASSECURIST - Multi-Function Security Tool
+BSIT-S31101: Delas Armas, J., Encillo, C., Samaniego, M., Tantoco, H.
+Section 1: Header + Last Updated--->
 
-## PASSECURIST
+# 🛡️ PASSECURIST
+**A Comprehensive Security Toolkit**
 
-A comprehensive security toolkit with four main features:
-1. **Password Strength Analyzer** - Evaluates password security with structural and dictionary checks
-2. **Password Generator & Hasher** - Creates strong passwords and generates SHA-256 hashes
-3. **Web Form Validator & Sanitizer** - Validates and sanitizes form inputs against XSS/SQL injection
+<details>
+<summary> 📅 Last Updated </summary>
+<br>
+
+| Date | Branch | Notes |
+|------|--------|-------|
+| March 2, 2026 | `milestone2-revised` | Added PCAP export, no-limit scanning, pause/resume |
+| February 24, 2026 | `milestone2` | Added Network Port Scanner, Traffic Analyzer |
+| February 1, 2026 | `gui` | Migrated from Tkinter to Streamlit |
+| January 27, 2026 | `ms1_draft` | Added SHA-256 hashing, security logger |
+
+</details>
+
+---
+
+## 🔗 Quick Links
+
+| Resource | Link |
+|----------|------|
+| Repository | [GitHub](https://github.com/i-Gits/MO-IT139_Security_Script_Programming.git) |
+| Project Plan | [Google Sheets](https://docs.google.com/spreadsheets/d/1oXL5hJg6MRoZwp_r84P0JkorvVMnKP5bkcYPTfBOUP0/edit?usp=sharing) |
+| Current Branch | `milestone2-revised` | AS OF MARCH 02, 2025 | 09:00:00 
+
 
 ---
 
 ## Features Overview
 
-### 1. Password Strength Analyzer
-- Analyzes password structure (length, uppercase, lowercase, numbers, symbols)
+<details>
+<summary> 1. Password Strength Analyzer </summary>
+<br>
+
+Analyzes password structure and flags weak passwords.
+
+- Checks length, uppercase, lowercase, numbers, symbols
 - Flags common passwords and dictionary words immediately
 - Uses local dictionary file and optional NLTK corpus
 - Visual strength indicator (Weak/Moderate/Strong)
 - Generates SHA-256 hash of entered password
 
-### 2. Password Generator
-- Generates cryptographically secure passwords (8-16 characters)
+<details>
+<summary> 📸 Screenshot </summary>
+<br>
+
+<!-- ![Password Strength Analyzer]() -->
+*Screenshot pending*
+
+Push note: pushed via VSCODE; no ubuildt in screenshot upload; in comparison, github query feature can be used as temp image upload and link generator
+
+</details>
+
+</details>
+
+<details>
+<summary> 2. Secure Password Generator </summary>
+<br>
+
+Cryptographically secure passwords with SHA-256 hashing.
+
+- Generates cryptographically secure passwords (8-32 characters)
 - Automatically includes all character types
 - Creates SHA-256 hash with random salt
-- Copy functions for password, hash, and code blocks
 - **Security**: Raw passwords are NEVER saved to disk
 
-### 3. Web Form Validator
+<details>
+<summary> 📸 Screenshot </summary>
+<br>
+
+<!-- ![Password Generator]() -->
+*Screenshot pending*
+
+</details>
+
+</details>
+
+<details>
+<summary> 3. Web Form Validator </summary>
+<br>
+
+XSS and SQL injection detection with sanitization.
+
 - Validates 4 fields: Full Name, Email, Username, Message
 - Checks for SQL injection keywords and XSS patterns
 - Email validation follows RFC 5321 standards
 - Blocks disposable email domains
 - Shows ALL violations per field with inline feedback
-- Displays sanitized output for safe database storage (via "security_logger.py")
+- Displays sanitized output for safe database storage
+
+<details>
+<summary> 📸 Screenshot </summary>
+<br>
+
+<!-- ![Web Form Validator]() -->
+*Screenshot pending*
+
+</details>
+
+</details>
 
 ---
 
-## How to Run
+# 🚀 How to Run
 
-### Installation
+<details>
+<summary> 💻 Windows </summary>
+<br>
+
 ```bash
-# Optional: Install NLTK for extended dictionary
-python -m pip install nltk
-python -m nltk.downloader words
+# 1. Clone the repository
+git clone https://github.com/i-Gits/MO-IT139_Security_Script_Programming.git
 
-# Required for encryption feature
-python -m pip install cryptography
+# 2. Create virtual environment
+python -m venv .venv
+
+# 3. Activate virtual environment
+.venv\Scripts\activate
+
+# 4. Install dependencies
+pip install streamlit pandas nltk scapy streamlit-keyup streamlit-option-menu cryptography
+
+# 5. Run the app
+streamlit run app.py
+
+# 6. For Traffic Analyzer (requires admin):
+#    - Open PowerShell as Administrator
+#    - Navigate to project folder
+#    - Run: .venv\Scripts\python -m streamlit run app.py
 ```
 
-### Launch Application
+</details>
+
+<details>
+<summary> 🍎 macOS </summary>
+<br>
+
 ```bash
-python main.py
+# 1. Clone the repository
+git clone https://github.com/i-Gits/MO-IT139_Security_Script_Programming.git
+
+# 2. Create virtual environment
+python3 -m venv .venv
+
+# 3. Activate virtual environment
+source .venv/bin/activate
+
+# 4. Install dependencies
+pip install streamlit pandas nltk scapy streamlit-keyup streamlit-option-menu cryptography
+
+# 5. Run the app
+streamlit run app.py
+
+# 6. For Traffic Analyzer (requires sudo):
+sudo .venv/bin/python -m streamlit run app.py
 ```
 
+</details>
+
+<!-- <details>
+<summary> 🐧 Linux </summary>
+<br>
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/i-Gits/MO-IT139_Security_Script_Programming.git
+
+# 2. Create virtual environment (Similar to MacOS)
+python3 -m venv .venv
+
+# 3. Activate virtual environment (Just like in the other two operating ssytems)
+source .venv/bin/activate
+
+# 4. Install dependencies
+pip install streamlit pandas etc etc etc
+
+# 5. Run the app
+streamlit run app.py
+
+# 6. For Traffic Analyzer (requires sudo):
+
+to verify online/ask for guidance
+
+```
+
+</details>.  | -->
+
 ---
 
-## Key Files
+# 📁 Project Structure
 
-### Core Application
-- **main.py** - Main application entry point with tabbed interface
-- **dictionary.txt** - Local word list for password strength checking (optional)
+<details>
+<summary> 📂 File Tree </summary>
+<br>
 
-### Features (`src/features/`)
-- **password_strength.py** - Password evaluation logic with veto checks
-- **password_generator.py** - Secure password generation and hashing
-- **webform_validator.py** - Form validation with XSS/SQL injection detection
+```
+MO-IT139_Security_Script_Programming/
+│
+├── app.py                              # Streamlit main entry point with tabbed interface
+├── README.md                           # Project documentation (you are here~r!)
+│
+├── data/
+│   ├── dictionary.txt                  # Local word list for password strength checking (optional)
+│   ├── passwords.txt                   # Hash storage (NO raw passwords saved)
+│   └── security_log.txt                # Attack/sanitization event logs
+│
+├── docs/
+│   └── Documentation.md                # Technical documentation
+│
+├── src/
+│   ├── main.py                         # Tkinter entry point (legacy, not used)
+│   │
+│   ├── features/
+│   │   ├── password_strength.py        # Password evaluation logic with veto checks
+│   │   ├── password_generator.py       # Secure password generation + SHA-256 hashing
+│   │   ├── webform_validator.py        # Form validation with XSS/SQL injection detection
+│   │   ├── network_port_scanner.py     # TCP port scanning logic
+│   │   └── network_traffic_analyzer.py # Packet capture with Scapy (requires sudo)
+│   │
+│   ├── gui/                            # Tkinter tabs (legacy, not used)
+│   │   ├── password_strength_tab.py    # Strength analyzer interface (legacy)
+│   │   ├── password_generator_tab.py   # Generator interface (legacy)
+│   │   ├── webform_validator_tab.py    # Form validator interface (legacy)
+│   │   ├── network_port_scanner_tab.py # Port scanner interface (legacy)
+│   │   ├── network_traffic_analyzer_tab.py # Traffic analyzer interface (legacy)
+│   │   └── styles.py                   # Application theme configuration (legacy)
+│   │
+│   └── utils/
+│       ├── dictionary.py               # Dictionary loading (local + NLTK)
+│       ├── genPassStorage.py           # Password hash storage (NO raw passwords)
+│       └── security_logger.py          # Security event logging (attacks, sanitization)
+│
+└── assets/
+    └── screenshots/                    # UI screenshots
+```
 
-### Utilities (`src/utils/`)
-- **dictionary.py** - Dictionary loading (local + NLTK)
-- **genPassStorage.py** - Password hash storage (NO raw passwords)
-- **security_logger.py** - Security event logging (attacks, sanitization, validation)
+</details>
 
-### GUI (`gui/`)
-- **password_strength_tab.py** - Strength analyzer interface
-- **password_generator_tab.py** - Generator interface
-- **web_validator_tab.py** - Form validator interface
-- **styles.py** - Application theme configuration
+<details>
+<summary> 📄 Key Files Explained </summary>
+<br>
+
+| File | Purpose |
+|------|---------|
+| `app.py` | Streamlit main entry point |
+| `src/main.py` | Tkinter entry (legacy) |
+| `src/features/password_strength.py` | Password evaluation with veto checks |
+| `src/features/password_generator.py` | Secure password generation + hashing |
+| `src/features/webform_validator.py` | XSS/SQL injection detection |
+| `src/features/network_port_scanner.py` | TCP port scanning |
+| `src/features/network_traffic_analyzer.py` | Packet capture with Scapy |
+| `src/utils/security_logger.py` | Attack/sanitization logging |
+| `data/passwords.txt` | Hash storage (NO raw passwords) |
+| `data/security_log.txt` | Audit trail |
+
+</details>
 
 ---
 
-## Password Strength Evaluation
+<details>
+<summary> 🔐 Password Strength Evaluation </summary>
+<br>
 
 ### Structural Checks (5 points)
 1. Length ≥ 12 characters
@@ -93,35 +280,71 @@ python main.py
 2. Contains no dictionary words
 
 **Scoring:**
-- **Strong**: Score = 7 (all checks passed, no veto)
-- **Moderate**: Score = 5-6
-- **Weak**: Score ≤ 4 OR vetoed by common password/dictionary word
+| Score | Rating |
+|-------|--------|
+| 7 | **Strong** (all checks passed, no veto) |
+| 5-6 | **Moderate** |
+| ≤4 OR vetoed | **Weak** |
+
+</details>
 
 ---
 
-## Web Form Validation Rules
+<details>
+<summary> 📝 Web Form Validation Rules </summary>
+<br>
 
-### Full Name
+| Field | Rules |
+|-------|-------|
+| **Full Name** | Min 2 chars, no numbers, only letters/spaces/hyphens/apostrophes, single-space only |
+| **Email** | RFC 5321 compliant (max 320 chars), valid structure, blocks disposable domains |
+| **Username** | 4-16 chars, starts with letter, no spaces, only letters/numbers/underscores |
+| **Message** | Max 250 chars, blocks SQL keywords & XSS patterns, logs attack attempts |
+
+<details>
+<summary> 🔍 Full Name Details </summary>
+
 - Minimum 2 characters
 - No numbers allowed
 - Only letters, spaces, hyphens, apostrophes
-- Allows single-space format only (✅"Mario Juan" | ❌"Mario__Juan"  *2 spaces in between)
+- Allows single-space format only (✅"Mario Juan" | ❌"Mario__Juan")
 
-### Email
+</details>
+
+<details>
+<summary> 🔍 Email Details </summary>
+
 - RFC 5321 compliant (max 320 chars)
 - Valid structure: local@domain.tld
 - No spaces, consecutive dots, or invalid characters
 - Should not start with a special character
 - Blocks disposable email domains
+-* *RFC = Request for Comments; basically official internet rulebook for email formatting
+w/c is 
+Max 320 characters total
+Local part (before @) max 64 chars
+Domain (after @) max 255 chars
+Valid characters allowed
 
-### Username
+
+
+
+</details>
+
+<details>
+<summary> 🔍 Username Details </summary>
+
 - 4-16 characters
 - Must start with letter
 - No spaces allowed
 - Only letters, numbers, underscores
 - No consecutive underscores
 
-### Message
+</details>
+
+<details>
+<summary> 🔍 Message Details </summary>
+
 - Max 250 characters
 - Should not be empty
 - Blocks SQL keywords (SELECT, DROP, etc.)
@@ -129,25 +352,41 @@ python main.py
 - Blocks JavaScript protocols
 - Logs attack attempts (SQL injection, XSS) to security log
 
+</details>
+
+</details>
+
 ---
 
-## Security Features
+<details>
+<summary> 🔒 Security Features </summary>
+<br>
 
-### Password Generator
+<details>
+<summary> Password Generator </summary>
+
 - ✓ Cryptographically secure random generation
 - ✓ SHA-256 hashing with 16-byte random salt
 - ✓ Raw passwords NEVER saved to disk
 - ✓ Hash storage in `data/passwords.txt`
 - ✓ Copy functions for easy password management
 
-### Password Strength Analyzer
+</details>
+
+<details>
+<summary> Password Strength Analyzer </summary>
+
 - ✓ Dictionary word detection (local + NLTK)
 - ✓ Common password veto system
 - ✓ Visual strength indicators
 - ✓ SHA-256 hash generation for analysis
 - ✓ Detailed feedback on weaknesses
 
-### Web Form Validator
+</details>
+
+<details>
+<summary> Web Form Validator </summary>
+
 - ✓ Multi-layer sanitization (9 layers)
 - ✓ SQL injection keyword filtering
 - ✓ XSS pattern detection and removal
@@ -157,66 +396,157 @@ python main.py
 - ✓ Security logging system
 
 
+<details>
+<summary> Extra Tid Bits of Info ℹ️ </summary>
+
+RFC 5321 = email format rules (industry standard)
+SQL injection = attacks database with SQL commands
+XSS = attacks browser with scripts
+Both are logged in security_log.txt
+
+
+</details>
+</details>
+
+</details>
+
 ---
 
-## Data Storage
+<details>
+<summary> 💾 Data Storage </summary>
+<br>
 
-### Generated Passwords (`data/passwords.txt`)
-Format: `[timestamp] | hash # salt`
+<details>
+<summary> Generated Passwords (data/passwords.txt) </summary>
+
+**Format:** `[timestamp] | hash # salt`
 - Stores hash and salt only
 - NO raw passwords saved
 - Append mode (previous entries preserved)
 
-### Security Logs (`data/security_log.txt`)
-Format: Timestamped entries with detailed event information
+</details>
+
+<details>
+<summary> Security Logs (data/security_log.txt) </summary>
+
+**Format:** Timestamped entries with detailed event information
 - Logs attack attempts (SQL injection, XSS, disposable emails)
 - Records sanitization actions
 - Tracks validation summaries
 - Append mode (audit trail preserved)
 
----
+</details>
 
-## Dependencies
-```
-tkinter (built-in)
-hashlib (built-in)
-os (built-in)
-re (built-in)
-html (built-in)
-string (built-in)
-random (built-in)
-datetime (built-in)
-nltk (optional - for extended dictionary)
-```
+</details>
 
 ---
 
-## Version History
+<details>
+<summary> 📦 Dependencies </summary>
+<br>
 
-### MS1 (Draft) 
-**Core Features Implemented - January 26, 2026**:
+**Built-in (no install needed):**
+```
+hashlib, os, re, html, string, random, datetime, socket, struct
+```
+
+**Install required:**
+```bash
+pip install streamlit pandas nltk scapy streamlit-keyup streamlit-option-menu cryptography
+```
+
+| Package | Purpose |
+|---------|---------|
+| `streamlit` | Web UI framework |
+| `pandas` | Data handling for tables |
+| `nltk` | Extended dictionary (optional) |
+| `scapy` | Packet capture (Traffic Analyzer) |
+| `streamlit-keyup` | Real-time input detection |
+| `streamlit-option-menu` | Navigation menu |
+| `cryptography` | Encryption features |
+
+</details>
+
+---
+
+<details>
+<summary> 📜 Version History </summary>
+<br>
+
+| Version | Date | Changes |
+|---------|------|---------|
+| **MS1 (Draft)** | Jan 26, 2026 | Password Strength Analyzer, Password Generator, Web Form Validator |
+| **MS1 (Final)** | Jan 27, 2026 | Bug fixes, security logging system |
+| **MS2 (GUI)** | Feb 1, 2026 | Migrated from Tkinter to Streamlit |
+| **MS2** | Feb 24, 2026 | Added Network Port Scanner, Traffic Analyzer |
+| **MS2-revised** | Mar 2, 2026 | PCAP export, no-limit scanning, pause/resume, BPF filters |
+
+<details>
+<summary> MS1 Details </summary>
+
+**Core Features (Jan 26, 2026):**
 - Password Strength Analyzer with 7-point scoring system
 - Password Generator & Hasher with SHA-256
 - Web Form Validator & Sanitizer with XSS/SQL injection protection
 
-**Bug Fixes/Updates Applied - January 27, 2026**:
-- Fixed duplicate space error in username validation (spaces excluded from invalid chars regex)
+**Bug Fixes (Jan 27, 2026):**
+- Fixed duplicate space error in username validation
 - Improved error message display (quoted special characters)
-- Strict single-space formatting for full names (`\s{2,}`)
-- Implemented comprehensive security logging system (`security_logger.py`)
+- Strict single-space formatting for full names
+- Implemented security logging system
 
-### MS1 (Final)
-*In progress - awaiting final review and testing*
+</details>
+
+<details>
+<summary> MS2 Details </summary>
+
+**Network Features (Feb 24, 2026):**
+- Network Port Scanner with TCP scanning
+- Network Traffic Analyzer with Scapy
+
+**Revisions (Mar 2, 2026):**
+- PCAP export functionality
+- No-limit packet capture option
+- Pause/Resume controls
+- BPF filter support
+
+</details>
+
+</details>
 
 ---
 
-## Notes
+<details>
+<summary> 📝 Notes </summary>
+<br>
 
-- **NLTK is optional**: App works without it but has smaller dictionary
-- **Raw passwords**: NEVER stored in password generator
-- **Security logs**: All validation events logged to `data/security_log.txt` for audit purposes
-- **User privacy**: Users only see clean error messages, not detailed security logs
+| Topic | Note |
+|-------|------|
+| **NLTK** | Optional — app works without it but has smaller dictionary |
+| **Raw passwords** | NEVER stored in password generator; and it shouldn't be! Be careful|
+| **Security logs** | All validation events logged to `data/security_log.txt` |
+| **User privacy** | Users only see clean error messages, not detailed logs ~ as it should be|
+| **Traffic Analyzer** | Requires sudo (macOS/Linux) or Admin (Windows) |
+
+</details>
+
 ---
 
-## Group's Project Plan
-- Link: https://docs.google.com/spreadsheets/d/1oXL5hJg6MRoZwp_r84P0JkorvVMnKP5bkcYPTfBOUP0/edit?usp=sharing
+<details>
+<summary> 📋 Group's Project Plan </summary>
+<br>
+
+**[View on Google Sheets](https://docs.google.com/spreadsheets/d/1oXL5hJg6MRoZwp_r84P0JkorvVMnKP5bkcYPTfBOUP0/edit?usp=sharing)**
+
+| Member | Role |
+|--------|------|
+| C. Encillo | Developer / Quality Assurance |
+| H. Tantoco | Developer / QA / Documentation |
+| J. Delas Armas | Developer / QA / Documentation |
+| M. Samaniego | Developer / Quality Assurance |
+
+</details>
+
+---
+
+*BSIT-S31101 | MO-IT139 Security Script Programming | 2026*

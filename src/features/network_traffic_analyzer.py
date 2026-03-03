@@ -1,7 +1,8 @@
 # src/features/network_traffic_analyzer.py
 
+import socket
 import sys
-import os
+import os   
 from datetime import datetime
 
 # Checks if Scapy is installed
@@ -31,8 +32,8 @@ def format_packet_info(packet):
     packet_info = {
         'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
         'protocol': 'Unknown',
-        'src_mac': 'N/A',  # <--- hi, this is NEW
-        'dst_mac': 'N/A',  # <--- also NEW
+        'src_mac': 'N/A',
+        'dst_mac': 'N/A',
         'src_ip': 'N/A',
         'dst_ip': 'N/A',
         'src_port': 'N/A',
@@ -43,9 +44,11 @@ def format_packet_info(packet):
     try:
         # Checks if packet has IP layer
         if IP in packet:
+            packet_info['src_mac'] = packet[Ether].src
+            packet_info['dst_mac'] = packet[Ether].dst
             packet_info['src_ip'] = packet[IP].src
             packet_info['dst_ip'] = packet[IP].dst
-            
+
             # Checks protocol
             if TCP in packet:
                 packet_info['protocol'] = 'TCP'
@@ -74,47 +77,66 @@ def format_packet_info(packet):
     return packet_info
 
 
-def validate_filter(filter_string):
-    
-    # Validate BPF filter string.
-    if not filter_string or filter_string.strip() == "":
-        return True, None  # Empty filter is valid (captures all)
-    
-    filter_string = filter_string.strip().lower()
-    
-    # Checks if there's any valid protocol keywords
-    valid_protocols = ['tcp', 'udp', 'icmp', 'ip', 'arp', 'ip6']
-    valid_keywords = ['and', 'or', 'not', 'port', 'host', 'src', 'dst', 'net', 'portrange']
-    
-    # Checks if it contains at least one valid keyword
-    tokens = filter_string.split()
-    has_valid_token = any(
-        token in valid_protocols or 
-        token in valid_keywords or 
-        token.isdigit() 
-        for token in tokens
-    )
-    
-    if not has_valid_token:
-        return False, "Invalid filter. Use protocols (tcp/udp/icmp) or BPF syntax."
-    
-    # Checks for common mistakes
-    if filter_string.count('(') != filter_string.count(')'):
-        return False, "Unmatched parentheses in filter."
-    
-    # Check for incomplete "port" filters (e.g., "tcp and port" without number)
-    if 'port' in tokens:
-        port_index = tokens.index('port')
-        # Check if there's a token after 'port'
-        if port_index + 1 >= len(tokens):
-            return False, "Incomplete filter. 'port' keyword requires a port number."
-        # Check if the next token is a valid port number
-        next_token = tokens[port_index + 1]
-        if not next_token.isdigit():
-            return False, "Invalid port number. Port must be a number (e.g., 'port 80')."
-    
-    return True, None
+def validate_filter(proto: str = "", port: str = "", host: str = "", src_ip: str = "", dst_ip: str = "") -> tuple[bool, str]:
+    """
+    Builds and lightly validates a BPF filter string from the GUI fields.
+    Returns (is_valid: bool, filter_or_error: str)
+    """
+    filter_parts = []
 
+    # Protocol
+    if proto:
+        proto_clean = proto.strip().lower()
+        valid_protos = {'tcp', 'udp', 'icmp', 'ip', 'arp', 'ip6'}
+        if proto_clean not in valid_protos:
+            return False, f"Invalid protocol: '{proto_clean}'. Allowed: tcp, udp, icmp, ip, arp, ip6"
+        filter_parts.append(proto_clean)
+
+    # Port
+    if port:
+        port_clean = port.strip()
+        if not port_clean.isdigit():
+            return False, f"Invalid port: '{port_clean}' – must be a number (example: 80)"
+        filter_parts.append(f"port {port_clean}")
+
+    # General Host / IP
+    if host:
+        host_clean = host.strip()
+        try:
+            ip = socket.gethostbyname(host_clean)
+            filter_parts.append(f"host {ip}")
+        except socket.gaierror as e:
+            return False, f"Cannot resolve host/IP: '{host_clean}' ({e})"
+
+    # --- Source IP Filter ---
+    if src_ip:
+        src_clean = src_ip.strip()
+        try:
+            ip = socket.gethostbyname(src_clean)
+            filter_parts.append(f"src host {ip}")
+        except socket.gaierror as e:
+            return False, f"Cannot resolve Source IP/Host: '{src_clean}' ({e})"
+
+    # --- NEW: Destination IP Filter ---
+    if dst_ip:
+        dst_clean = dst_ip.strip()
+        try:
+            ip = socket.gethostbyname(dst_clean)
+            filter_parts.append(f"dst host {ip}")
+        except socket.gaierror as e:
+            return False, f"Cannot resolve Destination IP/Host: '{dst_clean}' ({e})"
+
+    # Build final string
+    if not filter_parts:
+        return True, ""  # empty filter = capture everything
+
+    filter_str = " and ".join(filter_parts)
+
+    # Very basic validity check
+    if not any(kw in filter_str for kw in ['tcp','udp','icmp','ip','arp','port','host']):
+        return False, "Filter has no recognizable BPF elements"
+
+    return True, filter_str
 
 def start_packet_capture(filter_string="", packet_callback=None, stop_callback=None, count=0):
     """
@@ -159,11 +181,6 @@ def start_packet_capture(filter_string="", packet_callback=None, stop_callback=N
             f"{platform_msg}"
         )
     
-    # Validates filter
-    is_valid, error_msg = validate_filter(filter_string)
-    if not is_valid:
-        raise ValueError(error_msg)
-    
     def packet_handler(packet):
         # Handler that formats and forwards packets to callback
         if stop_callback and stop_callback():
@@ -172,7 +189,20 @@ def start_packet_capture(filter_string="", packet_callback=None, stop_callback=N
         if packet_callback:
             packet_info = format_packet_info(packet)
             packet_callback(packet_info)
-    
+
+    # Store raw packets
+    raw_packets = []  # Stores actual scapy packet objects for PCAP export
+
+    def packet_handler(packet):
+        if stop_callback and stop_callback():
+            return True
+        
+        raw_packets.append(packet)  # Save the raw packet before formatting
+        
+        if packet_callback:
+            packet_info = format_packet_info(packet)
+            packet_callback(packet_info)
+
     try:
         # Start sniffing
         sniff(
@@ -196,6 +226,8 @@ def start_packet_capture(filter_string="", packet_callback=None, stop_callback=N
             )
         else:
             raise Exception(f"Capture error: {error_details}")
+        
+    return raw_packets  # Added this so that it can return raw scapy packets for PCAP export
 
 
 def get_scapy_status():
