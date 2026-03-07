@@ -309,9 +309,6 @@ MO-IT139_Security_Script_Programming/
 ### Overview
 Scans TCP ports on a target host to identify open/closed ports. Includes preset categories for common services (Web, Mail, Gaming, etc.).
 
-<!--*Like knocking on doors to see which ones are open~ except the doors are network ports and we're checking if services are running behind them. So the doors are port als, and if you knock and they're open you can get sucked right in to another dimension, ha! Kidding, you can choose to cross or not. Because the portal is open or you can throw in pebbles in the portal and maybe you'll find that this portal is the backdoor to the president's suite, or a suburban toilet*-->
-
-
 **File**: `src/features/network_port_scanner.py`
 
 **References**:
@@ -429,6 +426,66 @@ Scans TCP ports on a target host to identify open/closed ports. Includes preset 
 | Valorant | 80, 443, 7000-8000 | Valorant game |
 
 *Yes, we added gaming ports. Priorities~ *
+
+---
+
+### run_scapy_traceroute(target, max_hops=30)
+**Purpose**: Trace the network path to a target host by sending ICMP packets with incrementing TTL values.
+
+**Parameters**:
+- `target` (str): Target IP address or hostname
+- `max_hops` (int, default=30): Maximum number of hops before giving up
+
+**Returns**: List of hop dicts (one per TTL step), or empty list if traceroute fails entirely.
+
+**Returned hop dict fields**:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `ttl` | int | TTL value sent |
+| `ip` | str | Responding IP (`"*"` if no response) |
+| `hostname` | str | Reverse DNS name, or same as `ip` if unresolvable |
+| `rtt_ms` | float | Round-trip time in milliseconds (`None` if no response) |
+| `icmp_type` | int | ICMP type of reply — 11 = time-exceeded, 0 = echo-reply, `None` if no reply |
+| `is_target` | bool | `True` if reply came from the target IP |
+| `responded` | bool | `False` means the hop timed out (shown as `* * *`) |
+
+**Details**:
+- Stops early when `is_target` is True (destination reached)
+- Unresponsive hops still appear in the list with `responded=False` so hop count stays accurate
+- Calls `_get_gateway_mac()` internally to identify the local gateway as the first hop
+
+---
+
+### _get_gateway_mac()
+**Purpose**: Auto-detect the active network interface and gateway MAC address for use as the traceroute starting node.
+
+**Parameters**: None
+
+**Returns**: Tuple of `(interface_name, gateway_mac)`, or `(None, None)` if detection fails at all steps.
+
+**Detection Steps** (tried in order, stops at first success):
+
+**Step 1 — Find active interface**
+Iterates Scapy's `get_if_list()` to find an interface with a real, non-link-local IP. Works cross-platform since Scapy's interface list is available on all OSes.
+
+**Step 2 — Get gateway IP (OS-specific)**
+- **Windows**: Runs `route print 0.0.0.0` — lists the default route with the gateway IP.
+- **macOS**: Runs `route -n get default` — outputs the gateway on a dedicated line.
+- **Linux**: Neither command is available; falls through to Step 3.
+
+**Step 3 — Fallback gateway guess**
+Used on Linux or when Step 2 fails. Assumes the gateway is the `.1` address on the same subnet (e.g. `192.168.1.1`, `10.0.0.1`). Most home/office routers use `.1` as the gateway address.
+
+**Step 4 — Get MAC from ARP cache**
+Runs `arp -a` (works on Windows, macOS, and most Linux distros) and parses the output for the gateway IP. Handles both platform formats without sending any packets:
+- Windows format: `192.168.1.1    1c-3b-f3-89-a0-a8    dynamic`
+- macOS/Linux format: `? (192.168.1.1) at 1c:3b:f3:89:a0:a8 on en0`
+
+Both formats are matched via the 17-character MAC pattern (`xx-xx-xx-xx-xx-xx` or `xx:xx:xx:xx:xx:xx`).
+
+**Step 5 — ARP request (last resort)**
+Sends a broadcast ARP packet directly to discover the gateway MAC. Requires root/admin on all platforms.
 
 </details>
 
@@ -705,7 +762,6 @@ Blocked temporary email services:
 - trashmail.com
 - throwaway.email
 
-
 </details>
 
 ---
@@ -752,6 +808,130 @@ The Port Scanner and Traffic Analyzer use a mutual exclusion mechanism to preven
 ---
 
 <details>
+<summary> 📊 Data Visualizations (Mar 8, 2026) </summary>
+<br>
+
+Both local security tools now render interactive Plotly charts after a scan or capture session. All charts use the app's dark theme (`PLOTLY_LAYOUT`) and pull data directly from results stored in `st.session_state`. Charts appear inside collapsible expanders so they don't clutter the main view.
+
+---
+
+### 🔍 Network Port Scanner — Scan Analysis
+
+Charts appear inside the **Scan Analysis** expander after a scan completes. Data source is `st.session_state['open_ports_found']` (list of dicts with Port, Service, Description, Status) and `st.session_state['total_ports_scanned']` (int).
+
+---
+
+#### KPI Cards (4 cards)
+
+| Card | What it shows | Where the value comes from | How to verify manually |
+|------|--------------|---------------------------|------------------------|
+| Ports Scanned | Total ports probed | `total_ports_scanned` = End Port − Start Port + 1 | Count the range you entered (e.g. 1–1000 = 1000) |
+| Open Ports | Number of open ports found | `len(open_ports_found)` | Count the rows in the results table |
+| Closed Ports | Ports scanned but not open | `total_ports_scanned − open_ports_found` | Ports Scanned minus Open Ports |
+| Scan Duration | How long the scan took | `scan_end_time − scan_start_time` in seconds | Note the time you clicked Start and Stop |
+
+---
+
+#### Chart 1 — Open vs Closed Ports (Donut)
+
+**What it shows**: Proportion of open vs closed ports out of the total scanned.
+
+**Data source**: `open_count` and `closed_count` from session state after scan completes.
+
+**How to verify**: The two slice values should add up to exactly Ports Scanned. The center number = Open Ports count.
+
+---
+
+#### Chart 2 — Open Ports by Service Category (Horizontal Bar)
+
+**What it shows**: Groups discovered open ports by service category (e.g. Web Services, Remote Access) and shows how many open ports fell into each group.
+
+**Data source**: Each open port in `open_ports_found` is passed through `get_port_category(port)`, which looks it up in `PORT_CATEGORY_MAP` (built from `COMMON_PORTS_BY_CATEGORY` in `network_port_scanner.py`). Ports not in the map fall under "Other / Dynamic".
+
+**How to verify**: Look at the results table. Manually group ports by their service category and count — bar lengths should match.
+
+---
+
+#### Chart 3 — Discovered Open Ports — Number Line (Spike Chart)
+
+**What it shows**: Each open port as a vertical spike at its exact number on a horizontal axis. Shows where open ports cluster — e.g. all below 1000, or scattered across high ephemeral ports.
+
+**Data source**: `Port` column from `open_ports_found`, sorted ascending.
+
+**How to verify**: Number of spikes = Open Ports count. Hover each spike to confirm the port number and service name match the results table.
+
+---
+
+### 📡 Network Traffic Analyzer — Traffic Analysis
+
+Charts appear inside the **Traffic Analysis** expander after capture is paused. Data source is `st.session_state['captured_data']` (list of packet dicts), loaded into a DataFrame called `df_traffic`.
+
+---
+
+#### KPI Cards (4 cards)
+
+| Card | What it shows | Where the value comes from | How to verify manually |
+|------|--------------|---------------------------|------------------------|
+| Total Packets | Total packets captured | `len(df_traffic)` | Count the rows in the captured traffic table |
+| Unique Sources | Distinct source IPs seen | `df_traffic[df_traffic['Src IP'] != 'N/A']['Src IP'].nunique()` | Count distinct non-N/A values in the Src IP column |
+| Unique Destinations | Distinct destination IPs seen | `df_traffic[df_traffic['Dst IP'] != 'N/A']['Dst IP'].nunique()` | Count distinct non-N/A values in the Dst IP column |
+| Top Protocol | Most frequent protocol | `df_traffic['Proto'].value_counts().index[0]` | Find which Proto value appears most often in the table |
+
+---
+
+#### Chart 1 — Protocol Distribution (Donut)
+
+**What it shows**: Breakdown of captured packets by protocol — TCP, UDP, ICMP, Other, Unknown.
+
+**Data source**: `df_traffic['Proto'].value_counts()`
+
+**How to verify**: Export the CSV, count rows per value in the Proto column. Percentages should match.
+
+---
+
+#### Chart 2 — Top 8 Source IPs / Talkers (Horizontal Bar)
+
+**What it shows**: The 8 source IPs that sent the most packets, ranked by count.
+
+**Data source**: `df_traffic['Src IP'].value_counts().head(8)`
+
+**How to verify**: In the exported CSV, count occurrences per Src IP. Top 8 by count should match the chart.
+
+---
+
+#### Chart 3 — Top 10 Destination Ports (Treemap)
+
+**What it shows**: The 10 destination ports that received the most traffic. Block size = relative packet count — bigger block = more packets to that port. Each block is labeled with the port number and packet count.
+
+**Data source**: `df_traffic['Dst Port'].value_counts().head(10)`, with N/A entries excluded first.
+
+**How to verify**: In the exported CSV, filter out N/A in Dst Port, count occurrences per port, take top 10 — counts should match the block labels.
+
+---
+
+#### Chart 4 — Packet Volume Over Time (Line Chart)
+
+**What it shows**: How many packets were captured per second during the session — useful for spotting traffic spikes or quiet periods.
+
+**Data source**: `df_traffic['Time']` truncated to the second (`str[:19]`), then grouped: `df_time.groupby('Second').size()`.
+
+**How to verify**: Pick any second on the chart, go to the exported CSV, filter the Time column for rows matching that second (e.g. rows starting with `2026-03-07 14:32:05`), count them — should match the y-value on the chart.
+
+---
+
+#### Chart 5 — Source Device Vendor Breakdown (Donut)
+
+**What it shows**: Packets grouped by the vendor of the source device, identified via MAC address OUI lookup.
+
+**Data source**: `df_traffic['Src Vendor'].value_counts()`. Vendor is assigned in `update_traffic_ui()` in `app.py` by matching the first 8 characters of the source MAC against the `MAC_VENDORS` dict. Unrecognized MACs fall into "Generic Device".
+
+**How to verify**: In the exported CSV, count rows per Src Vendor value. Note: this chart only renders if at least 2 distinct vendors are present, or 1 vendor that is not Unknown/Generic Device — so it won't appear on single-device captures.
+
+</details>
+
+---
+
+<details>
 <summary> 📜 Version History </summary>
 <br>
 
@@ -762,6 +942,7 @@ The Port Scanner and Traffic Analyzer use a mutual exclusion mechanism to preven
 | **MS2 (GUI)** | Feb 1, 2026 | Migrated from Tkinter to Streamlit |
 | **MS2** | Feb 24, 2026 | Added Network Port Scanner, Traffic Analyzer |
 | **MS2-revised** | Mar 2, 2026 | PCAP export, no-limit scanning, stop/pause/resume, BPF filters, src/dst IP filtering, process termination fixes |
+| **MS2-dataviz** | Mar 8, 2026 | Plotly visualizations for Network Port Scanner (NPA) and Network Traffic Analyzer (NTA), traceroute network graph, cross-platform gateway detection (Windows/macOS/Linux) |
 
 <details>
 <summary> MS1 Details </summary>
@@ -795,6 +976,15 @@ The Port Scanner and Traffic Analyzer use a mutual exclusion mechanism to preven
 - Fixed process termination on tab/menu switch
 - Fixed scan stop/cancel event handling
 - Fixed capture ping timeout safeguard
+
+**Revisions (Mar 8, 2026):**
+- 3 Plotly charts for NPS: Open vs Closed donut, Service Category bar, Port Number Line spike chart
+- 5 Plotly charts for NTA: Protocol donut, Top Talkers bar, Destination Ports treemap, Packet Timeline, Vendor breakdown donut
+- KPI stat cards for both NPS and NTA
+- Scapy traceroute with Plotly network path graph (Bezier edges, glow halos, NmapGUI-style node coloring)
+- Traceroute hop detail table with TTL, IP, hostname, RTT, ICMP type, status
+- Cross-platform gateway detection: Windows (`route print`), macOS (`route -n get default`), Linux (subnet .1 fallback)
+
 
 </details>
 

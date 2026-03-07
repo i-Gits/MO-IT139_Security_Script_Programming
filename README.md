@@ -13,6 +13,7 @@ Section 1: Header + Last Updated--->
 
 | Date | Branch | Notes |
 |------|--------|-------|
+| March 8, 2026 | `ms2-dataviz` | Plotly visualizations, traceroute graph, cross-platform gateway detection |
 | March 2, 2026 | `milestone2-revised` | Added PCAP export, no-limit scanning, stop/pause/resume |
 | February 24, 2026 | `milestone2` | Added Network Port Scanner, Traffic Analyzer |
 | February 1, 2026 | `gui` | Migrated from Tkinter to Streamlit |
@@ -28,7 +29,7 @@ Section 1: Header + Last Updated--->
 |----------|------|
 | Repository | [GitHub](https://github.com/i-Gits/MO-IT139_Security_Script_Programming.git) |
 | Project Plan | [Google Sheets](https://docs.google.com/spreadsheets/d/1oXL5hJg6MRoZwp_r84P0JkorvVMnKP5bkcYPTfBOUP0/edit?usp=sharing) |
-| Current Branch | `milestone2-revised` | AS OF MARCH 02, 2026 | 09:00:00 
+| Current Branch | `ms2-dataviz` | AS OF MARCH 08, 2026 |
 
 
 ---
@@ -120,6 +121,8 @@ TCP port scanning with preset categories and real-time results.
 - Identifies service names for discovered open ports
 - Exports scan results as a CSV report
 - Locks out Traffic Analyzer while a scan is active to prevent conflicts
+- Interactive Plotly charts — Open vs Closed donut, Service Category bar, Port Number spike chart, KPI stat cards
+- Scapy traceroute with Plotly network path graph, hop detail table, cross-platform gateway detection
 
 <details>
 <summary> 📸 Screenshot </summary>
@@ -145,6 +148,8 @@ Real-time packet capture with BPF filtering and export. Requires administrator/r
 - Pause and Resume capture without losing previously captured packets
 - Exports captured traffic as CSV or PCAP (compatible with Wireshark)
 - Locks out Network Port Scanner while capture is active to prevent conflicts
+- Interactive Plotly charts — Protocol donut, Top Talkers bar, Destination Ports treemap, Packet Timeline, Vendor breakdown donut, KPI stat cards
+- Unique Sources and Destinations now correctly exclude N/A entries from Unknown/ARP packets
 
 <details>
 <summary> 📸 Screenshot </summary>
@@ -255,7 +260,7 @@ to verify online/ask for guidance
 MO-IT139_Security_Script_Programming/
 │
 ├── app.py                              # Streamlit main entry point with tabbed interface
-├── README.md                           # Project documentation (you are here~r!)
+├── README.md                           # Project documentation (you are here~!)
 │
 ├── data/
 │   ├── dictionary.txt                  # Local word list for password strength checking (optional)
@@ -370,15 +375,7 @@ MO-IT139_Security_Script_Programming/
 - No spaces, consecutive dots, or invalid characters
 - Should not start with a special character
 - Blocks disposable email domains
--* *RFC = Request for Comments; basically official internet rulebook for email formatting
-w/c is 
-Max 320 characters total
-Local part (before @) max 64 chars
-Domain (after @) max 255 chars
-Valid characters allowed
-
-
-
+- *RFC = Request for Comments; basically official internet rulebook for email formatting w/c is Max 320 characters total, Local part (before @) max 64 chars, Domain (after @) max 255 chars, Valid characters allowed*
 
 </details>
 
@@ -608,6 +605,7 @@ pip install streamlit pandas nltk scapy streamlit-keyup streamlit-option-menu cr
 | **MS2 (GUI)** | Feb 1, 2026 | Migrated from Tkinter to Streamlit |
 | **MS2** | Feb 24, 2026 | Added Network Port Scanner, Traffic Analyzer |
 | **MS2-revised** | Mar 2, 2026 | PCAP export, no-limit scanning, pause/resume, BPF filters, src/dst IP filtering, process termination fixes |
+| **MS2-dataviz** | Mar 8, 2026 | Plotly visualizations for NPS and NTA, traceroute network graph, cross-platform gateway detection, N/A IP exclusion |
 
 <details>
 <summary> MS1 Details </summary>
@@ -641,6 +639,14 @@ pip install streamlit pandas nltk scapy streamlit-keyup streamlit-option-menu cr
 - Fixed process termination on tab/menu switch
 - Fixed scan stop/cancel event handling
 - Fixed capture ping timeout safeguard
+
+**Revisions (Mar 8, 2026):**
+- 3 Plotly charts for NPS: Open vs Closed donut, Service Category bar, Port Number Line spike chart
+- 5 Plotly charts for NTA: Protocol donut, Top Talkers bar, Destination Ports treemap, Packet Timeline, Vendor breakdown donut
+- KPI stat cards for both NPS and NTA
+- Scapy traceroute with Plotly network path graph (Bezier edges, glow halos, NmapGUI-style node coloring)
+- Traceroute hop detail table with TTL, IP, hostname, RTT, ICMP type, status
+- Cross-platform gateway detection: Windows (`route print`), macOS (`route -n get default`), Linux (subnet .1 fallback)
 
 </details>
 
