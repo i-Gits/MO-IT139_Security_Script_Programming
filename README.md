@@ -21,14 +21,17 @@ All logs and password hashes are saved in the data folder.
 Features at a Glance:
 Access all tools from the Streamlit web GUI:
 
-Password Strength Analyzer
-Secure Password Generator
-Web Form Validator
-Network Port Scanner
-Network Traffic Analyzer
-URL Expander (new)
-URL Scam Scanner (new)
-Data Visualization (new)
+Password Strength Analyzer <br>
+Secure Password Generator   <br> 
+Web Form Validator<br>
+Network Port Scanner<br>
+Network Traffic Analyzer<br>
+*URL Expander <br>
+*URL Scam Scanner<br>
+*Data Visualization <br>
+<br>
+<br>
+
 Navigation:
 Use the sidebar to switch between tools. New features are marked as “new” in the interface.
 
@@ -36,7 +39,7 @@ Need more?
 See Documentation.md for advanced usage, troubleshooting, and details.
 
 
-## <details>
+<details>
 <summary> 📅 Last Updated </summary>
 <br>
 
@@ -85,7 +88,7 @@ Analyzes password structure and flags weak passwords.
 - Visual strength indicator (Weak/Moderate/Strong)
 - Generates SHA-256 hash of entered password
 
-### <details>
+<details>
 <summary> 📸 Screenshot </summary>
 <br>
 
@@ -102,7 +105,7 @@ test password
 
 </details>
 
-## <details>
+<details>
 <summary> 2. Secure Password Generator </summary>
 <br>
 
@@ -113,7 +116,7 @@ Cryptographically secure passwords with SHA-256 hashing.
 - Creates SHA-256 hash with random salt
 - **Security**: Raw passwords are NEVER saved to disk
 
-#### <details>
+<details>
 <summary> 📸 Screenshot </summary>
 <br>
 
@@ -129,7 +132,7 @@ Cryptographically secure passwords with SHA-256 hashing.
 
 </details>
 
-## <details>
+<details>
 <summary> 3. Web Form Validator </summary>
 <br>
 
@@ -142,7 +145,7 @@ XSS and SQL injection detection with sanitization.
 - Shows ALL violations per field with inline feedback
 - Displays sanitized output for safe database storage
 
-#### <details>
+<details>
 <summary> 📸 Screenshot </summary>
 <br>
 
@@ -160,7 +163,7 @@ XSS and SQL injection detection with sanitization.
 
 # New Features
 
-## <details>
+<details>
 <summary> 4. Network Port Scanner </summary>
 <br>
 Scan TCP ports on any host with real-time validation, service identification, and detailed results.
@@ -170,7 +173,7 @@ Scan TCP ports on any host with real-time validation, service identification, an
 - Service name lookup for known ports
 - Vulnerability info integration (see Data Visualization)
 
-#### <details>
+<details>
 <summary> 📸 Screenshot </summary>
 <br>
 <!-- ![Network Port Scanner](PLACEHOLDER_FOR_PORT_SCANNER_IMAGE) -->
@@ -178,7 +181,7 @@ Scan TCP ports on any host with real-time validation, service identification, an
 </details>
 </details>
 
-## <details>
+<details>
 <summary> 5. Network Traffic Analyzer </summary>
 <br>
 Capture and analyze real-time network packets with protocol filtering and detailed packet inspection.
@@ -188,7 +191,7 @@ Capture and analyze real-time network packets with protocol filtering and detail
 - PCAP export functionality
 - Pause/resume controls
 
-#### <details>
+<details>
 <summary> 📸 Screenshot </summary>
 <br>
 <!-- ![Network Traffic Analyzer](PLACEHOLDER_FOR_TRAFFIC_ANALYZER_IMAGE) -->
@@ -196,7 +199,7 @@ Capture and analyze real-time network packets with protocol filtering and detail
 </details>
 </details>
 
-## <details>
+<details>
 <summary> 6. URL Expander </summary>
 <br>
 Reveal the real destination behind shortened URLs.
@@ -204,7 +207,7 @@ Reveal the real destination behind shortened URLs.
 - Supports most major URL shorteners
 - Displays expanded URL and HTTP status
 
-#### <details>
+<details>
 <summary> 📸 Screenshot </summary>
 <br>
 <!-- ![URL Expander](PLACEHOLDER_FOR_URL_EXPANDER_IMAGE) -->
@@ -212,7 +215,7 @@ Reveal the real destination behind shortened URLs.
 </details>
 </details>
 
-## <details>
+<details>
 <summary> 7. URL Scam Scanner </summary>
 <br>
 Analyze URLs for phishing and scam indicators using offline heuristics.
@@ -221,7 +224,7 @@ Analyze URLs for phishing and scam indicators using offline heuristics.
 - Brand impersonation detection
 - URLhaus API integration (see Known Issues)
 
-#### <details>
+<details>
 <summary> 📸 Screenshot </summary>
 <br>
 <!-- ![URL Scam Scanner](PLACEHOLDER_FOR_URL_SCAM_SCANNER_IMAGE) -->
@@ -238,7 +241,7 @@ Visualize open port risks and vulnerabilities using Plotly.
 - Traceroute graph visualization
 - Cross-platform gateway detection
 
-#### <details>
+<details>
 <summary> 📸 Screenshot </summary>
 <br>
 <!-- ![Data Visualization](PLACEHOLDER_FOR_DATA_VISUALIZATION_IMAGE) -->
@@ -247,7 +250,7 @@ Visualize open port risks and vulnerabilities using Plotly.
 </details>
 ---
 
-# 🚀  How to Run (More Detailed Quickstart)
+# 🚀 How to Run
 
 <details>
 <summary> 💻 Windows </summary>
