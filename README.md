@@ -13,6 +13,8 @@ Section 1: Header + Last Updated--->
 
 | Date | Branch | Notes |
 |------|--------|-------|
+| March 24, 2026 | `ta-draft`         | Terminal Assessment features, bug fixes, expanded test coverage        |
+| March 8, 2026  | `ms2-dataviz`      | Plotly visualizations, traceroute graph, cross-platform gateway detection |
 | March 2, 2026 | `milestone2-revised` | Added PCAP export, no-limit scanning, pause/resume |
 | February 24, 2026 | `milestone2` | Added Network Port Scanner, Traffic Analyzer |
 | February 1, 2026 | `gui` | Migrated from Tkinter to Streamlit |
@@ -28,7 +30,7 @@ Section 1: Header + Last Updated--->
 |----------|------|
 | Repository | [GitHub](https://github.com/i-Gits/MO-IT139_Security_Script_Programming.git) |
 | Project Plan | [Google Sheets](https://docs.google.com/spreadsheets/d/1oXL5hJg6MRoZwp_r84P0JkorvVMnKP5bkcYPTfBOUP0/edit?usp=sharing) |
-| Current Branch | `milestone2-revised` | AS OF MARCH 02, 2025 | 09:00:00 
+| Current Branch | `milestone2-revised` | AS OF MARCH 24, 2026 | 09:00:00 
 
 
 ---
