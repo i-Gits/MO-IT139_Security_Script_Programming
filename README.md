@@ -30,7 +30,7 @@ Section 1: Header + Last Updated--->
 |----------|------|
 | Repository | [GitHub](https://github.com/i-Gits/MO-IT139_Security_Script_Programming.git) |
 | Project Plan | [Google Sheets](https://docs.google.com/spreadsheets/d/1oXL5hJg6MRoZwp_r84P0JkorvVMnKP5bkcYPTfBOUP0/edit?usp=sharing) |
-| Current Branch | `milestone2-revised` | AS OF MARCH 24, 2026 | 09:00:00 
+| Current Branch | `ta-draft` | AS OF MARCH 24, 2026 | 02:27:00 
 
 
 ---
@@ -125,6 +125,96 @@ XSS and SQL injection detection with sanitization.
 
 </details>
 
+
+<br>
+<br>
+# New Features
+
+<details>
+<summary> 4. Network Port Scanner </summary>
+<br>
+Scan TCP ports on any host with real-time validation, service identification, and detailed results.
+
+- Preset categories for common services (Web, Mail, Gaming, etc.)
+- Custom port range scanning
+- Service name lookup for known ports
+- Vulnerability info integration (see Data Visualization)
+
+<details>
+<summary> 📸 Screenshot </summary>
+<br>
+<!-- ![Network Port Scanner](PLACEHOLDER_FOR_PORT_SCANNER_IMAGE) -->
+*Screenshot pending*
+</details>
+</details>
+
+<details>
+<summary> 5. Network Traffic Analyzer </summary>
+<br>
+Capture and analyze real-time network packets with protocol filtering and detailed packet inspection.
+
+- Live packet capture (requires admin/sudo)
+- BPF filter support (protocol, port, IP)
+- PCAP export functionality
+- Pause/resume controls
+
+<details>
+<summary> 📸 Screenshot </summary>
+<br>
+<!-- ![Network Traffic Analyzer](PLACEHOLDER_FOR_TRAFFIC_ANALYZER_IMAGE) -->
+*Screenshot pending*
+</details>
+</details>
+
+<details>
+<summary> 6. URL Expander </summary>
+<br>
+Reveal the real destination behind shortened URLs.
+
+- Supports most major URL shorteners
+- Displays expanded URL and HTTP status
+
+<details>
+<summary> 📸 Screenshot </summary>
+<br>
+<!-- ![URL Expander](PLACEHOLDER_FOR_URL_EXPANDER_IMAGE) -->
+*Screenshot pending*
+</details>
+</details>
+
+<details>
+<summary> 7. URL Scam Scanner </summary>
+<br>
+Analyze URLs for phishing and scam indicators using offline heuristics.
+
+- 8-point risk scoring (IP as domain, typosquatting, suspicious TLDs, etc.)
+- Brand impersonation detection
+- URLhaus API integration (see Known Issues)
+
+<details>
+<summary> 📸 Screenshot </summary>
+<br>
+<!-- ![URL Scam Scanner](PLACEHOLDER_FOR_URL_SCAM_SCANNER_IMAGE) -->
+*Screenshot pending*
+</details>
+</details>
+
+<details>
+<summary> 8. Data Visualization (Port Vulnerability Visualization) </summary>
+<br>
+Visualize open port risks and vulnerabilities using Plotly.
+
+- Per-port risk badges (Critical, High, Medium, Low, Unknown)
+- Traceroute graph visualization
+- Cross-platform gateway detection
+
+<details>
+<summary> 📸 Screenshot </summary>
+<br>
+<!-- ![Data Visualization](PLACEHOLDER_FOR_DATA_VISUALIZATION_IMAGE) -->
+*Screenshot pending*
+</details>
+</details>
 ---
 
 # 🚀 How to Run
