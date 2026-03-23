@@ -128,6 +128,7 @@ XSS and SQL injection detection with sanitization.
 
 <br>
 <br>
+
 # New Features
 
 <details>
