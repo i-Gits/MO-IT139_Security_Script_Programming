@@ -28,6 +28,7 @@ from features.password_generator import generate_password, hash_password, save_t
 from features.webform_validator import validate_and_sanitize_form
 from features.network_port_scanner import PORT_PRESETS, COMMON_PORTS_BY_CATEGORY, validate_host, validate_port_range, scan_port_range, get_service_name
 from features.network_traffic_analyzer import get_scapy_status, validate_filter, start_packet_capture
+from utils.port_vulnerability_db import render_vulnerability_section, get_port_data, get_overall_risk, RISK_ORDER, RISK_COLORS, RISK_BADGE
 
 # --- 2. CONFIG ---
 st.set_page_config(
@@ -123,6 +124,13 @@ st.markdown("""
     }
     .tr-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
 
+            
+    /* Vulnerability card styles */
+    .vuln-card { border-left: 3px solid; border-radius: 0; padding: 12px 14px; margin-bottom: 10px; background: #0d1829; }
+    .port-badge-vuln { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: #1e293b; border: 1px solid #334155; border-radius: 4px; padding: 2px 7px; color: #94a3b8; }
+    .risk-pill { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; font-family: 'JetBrains Mono', monospace; }
+    .cve-desc { font-size: 13px; color: #64748b; margin: 8px 0; line-height: 1.5; }
+        
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     </style>
@@ -160,7 +168,6 @@ PORT_CATEGORY_MAP = build_category_lookup()
 
 def get_port_category(port):
     return PORT_CATEGORY_MAP.get(port, "Other / Dynamic")
-
 
 # ==========================================
 # TRACEROUTE IMPLEMENTATION
@@ -828,58 +835,71 @@ elif menu_selection == "Local Security Tools":
                     threading.Thread(target=run_scan, daemon=True, name="run_scan").start()
                     st.rerun()
 
+            # --- Scanning in progress ---  
             if nps_is_running:
-                thread_state = st.session_state.get('_thread_state', {})
+                thread_state   = st.session_state.get('_thread_state', {})
                 thread_results = st.session_state.get('_thread_results', [])
-
-                st.session_state.scan_progress = thread_state.get("progress", 0)
+                st.session_state.scan_progress     = thread_state.get("progress", 0)
                 st.session_state.scan_results_live = list(thread_results)
-
                 status = thread_state.get("status", "scanning")
 
                 if status == "scanning":
                     st.warning(
-                        "🚨 **DO NOT SWITCH TO ANOTHER TOOLS PAGE (e.g., Web Based Security Tools)!** "
-                        "Switching to another page will auto-stop your scan.",
+                        "🚨 **DO NOT SWITCH TO ANOTHER TOOLS PAGE!** "
+                        "Switching will auto-stop your scan.",
                         icon="⚠️"
                     )
                     st.progress(
                         st.session_state.scan_progress,
                         text=f"Scanning ports... {int(st.session_state.scan_progress * 100)}%"
                     )
-                    if st.session_state.scan_results_live:
-                        results_placeholder.dataframe(
-                            pd.DataFrame(st.session_state.scan_results_live),
-                            use_container_width=True
-                        )
+                    with results_placeholder.container():
+                        if st.session_state.scan_results_live:
+                            st.dataframe(
+                                pd.DataFrame(st.session_state.scan_results_live),
+                                use_container_width=True
+                            )
+                        else:
+                            st.caption("Waiting for first open port...")
                 else:
-                    st.session_state.scan_running = False
-                    st.session_state.scan_status = status
+                    # Scan just finished; save results, then force a clean rerun
+                    # so display block below never runs on the same pass as this one
+                    st.session_state.scan_running  = False
+                    st.session_state.scan_status   = status
                     st.session_state.scan_end_time = time.time()
                     if status == "done":
-                        st.session_state['scan_host'] = target_host
-                        st.session_state['open_ports_found'] = list(thread_results)
+                        st.session_state['scan_host']           = target_host
+                        st.session_state['open_ports_found']    = list(thread_results)
                         st.session_state['total_ports_scanned'] = thread_state.get("total_scanned", 0)
+                    st.rerun()  # ← KEY: guarantees the two display paths never overlap
 
-            if st.session_state.get('scan_status') == 'done' and not st.session_state.get('open_ports_found'):
-                st.info("Scan complete — no open ports found in the specified range.")
+            # --- Scan finished, no results ---
+            elif st.session_state.get('scan_status') == 'done' and not st.session_state.get('open_ports_found'):
+                with results_placeholder.container():
+                    st.info("Scan complete — no open ports found in the specified range.")
                 st.session_state.scan_status = ""
 
-            if st.session_state.get('open_ports_found') is not None:
+            # --- Scan finished, show results ---
+            elif st.session_state.get('open_ports_found') is not None:
                 df_final = pd.DataFrame(st.session_state['open_ports_found'])
-                if not df_final.empty:
-                    results_placeholder.dataframe(df_final, use_container_width=True)
-                csv_data = df_final.to_csv(index=False).encode('utf-8') if not df_final.empty else b""
-                _, dl_col, _ = st.columns([1, 2, 1])
-                with dl_col:
+                with results_placeholder.container():
                     if not df_final.empty:
+                        st.dataframe(df_final, use_container_width=True)
+                if not df_final.empty:
+                    _, dl_col, _ = st.columns([1, 2, 1])
+                    with dl_col:
                         st.download_button(
                             "📥 Export Scan Report (CSV)",
-                            data=csv_data,
+                            data=df_final.to_csv(index=False).encode('utf-8'),
                             file_name=f"PortScan_{st.session_state['scan_host']}.csv",
                             mime="text/csv",
                             use_container_width=True
                         )
+
+        # --- VULNERABILITY CHECK ---
+        if st.session_state.get('open_ports_found') is not None and not nps_is_running:
+            open_port_list = [row["Port"] for row in st.session_state['open_ports_found']]
+            render_vulnerability_section(open_port_list)
 
         # --- SCAN VISUALIZATIONS ---
         open_ports_data = st.session_state.get('open_ports_found')
@@ -1385,7 +1405,7 @@ elif menu_selection == "Local Security Tools":
                         fig_vendor.update_layout(**PLOTLY_LAYOUT, height=280)
                         st.plotly_chart(fig_vendor, use_container_width=True)
 
-# Auto-refresh while scans or captures are active since Streamlit doesn't support live-updating outputs without a rerun trigger
+    # Auto-refresh while scans or captures are active since Streamlit doesn't support live-updating outputs without a rerun trigger
     if nps_is_running or nta_is_running:
         time.sleep(0.3)
         st.rerun()
