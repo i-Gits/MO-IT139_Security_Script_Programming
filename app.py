@@ -1,3 +1,5 @@
+# app.py
+
 import streamlit as st
 import sys
 import os
@@ -29,6 +31,8 @@ from features.webform_validator import validate_and_sanitize_form
 from features.network_port_scanner import PORT_PRESETS, COMMON_PORTS_BY_CATEGORY, validate_host, validate_port_range, scan_port_range, get_service_name
 from features.network_traffic_analyzer import get_scapy_status, validate_filter, start_packet_capture
 from utils.port_vulnerability_db import render_vulnerability_section, get_port_data, get_overall_risk, RISK_ORDER, RISK_COLORS, RISK_BADGE
+from features.url_expander import expand_url
+from features.url_scam_scanner import scan_url
 
 # --- 2. CONFIG ---
 st.set_page_config(
@@ -124,13 +128,12 @@ st.markdown("""
     }
     .tr-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
 
-            
     /* Vulnerability card styles */
     .vuln-card { border-left: 3px solid; border-radius: 0; padding: 12px 14px; margin-bottom: 10px; background: #0d1829; }
     .port-badge-vuln { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: #1e293b; border: 1px solid #334155; border-radius: 4px; padding: 2px 7px; color: #94a3b8; }
     .risk-pill { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; font-family: 'JetBrains Mono', monospace; }
     .cve-desc { font-size: 13px; color: #64748b; margin: 8px 0; line-height: 1.5; }
-        
+
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     </style>
@@ -176,21 +179,16 @@ def get_port_category(port):
 def _get_gateway_mac() -> tuple:
     """
     Detect active network interface and gateway MAC address.
-
     Works on Windows, macOS, and Linux.
-    Windows uses 'route print', macOS uses 'route -n get default', Linux skips
-    to the subnet .1 guess. All three fall back to 'arp -a' for the MAC lookup.
-
     Returns (iface, gw_mac) or (None, None) on failure.
     """
     try:
         from scapy.all import get_if_list, get_if_addr, ARP, Ether, srp
         import subprocess, ipaddress, platform
 
-        os_name = platform.system()  # 'Windows', 'Darwin' (macOS), or 'Linux'
+        os_name = platform.system()
 
-        # --- Step 1: find active interface (real IP, not link-local) ---
-        # Works on all platforms — Scapy's get_if_list() is cross-platform.
+        # Step 1: find active interface (real IP, not link-local)
         active_iface = None
         for iface in get_if_list():
             ip = get_if_addr(iface)
@@ -205,7 +203,7 @@ def _get_gateway_mac() -> tuple:
         if not active_iface:
             return None, None
 
-        # --- Step 2: get gateway IP (OS-specific commands) ---
+        # Step 2: get gateway IP (OS-specific)
         gw_ip = None
         try:
             if os_name == "Windows":
@@ -220,9 +218,7 @@ def _get_gateway_mac() -> tuple:
                             break
                         except ValueError:
                             continue
-
-            elif os_name == "Darwin":  # macOS
-                # 'route -n get default' outputs a line like: "gateway: 192.168.1.1"
+            elif os_name == "Darwin":
                 out = subprocess.check_output(["route", "-n", "get", "default"]).decode(errors="ignore")
                 for line in out.splitlines():
                     if "gateway:" in line:
@@ -236,7 +232,7 @@ def _get_gateway_mac() -> tuple:
         except Exception:
             pass
 
-        # --- Step 3: fallback — guess gateway as x.x.x.1 on same subnet ---
+        # Step 3: fallback — guess gateway as x.x.x.1
         if not gw_ip:
             try:
                 my_ip = get_if_addr(active_iface)
@@ -248,24 +244,20 @@ def _get_gateway_mac() -> tuple:
         if not gw_ip:
             return None, None
 
-        # --- Step 4: get MAC from arp cache first (no packet needed) ---
-        # 'arp -a' works on Windows, macOS, and most Linux distros.
+        # Step 4: get MAC from arp cache
         try:
             out = subprocess.check_output("arp -a", shell=True).decode(errors="ignore")
             for line in out.splitlines():
                 if gw_ip in line:
                     parts = line.split()
                     for part in parts:
-                        # Match MAC format xx-xx-xx-xx-xx-xx or xx:xx:xx:xx:xx:xx
                         if len(part) == 17 and (part.count("-") == 5 or part.count(":") == 5):
                             gw_mac = part.replace("-", ":")
                             return active_iface, gw_mac
         except Exception:
             pass
 
-        # --- Step 5: ARP request as last resort ---
-        # Sends a broadcast ARP packet to discover the gateway MAC directly.
-        # Requires root/admin on all platforms.
+        # Step 5: ARP request as last resort
         ans, _ = srp(
             Ether(dst="ff:ff:ff:ff:ff:ff") / ARP(pdst=gw_ip),
             iface=active_iface, timeout=3, verbose=0
@@ -283,13 +275,7 @@ def _get_gateway_mac() -> tuple:
 def run_scapy_traceroute(target: str, min_ttl: int = 1, max_ttl: int = 30, timeout: int = 3) -> list:
     """
     Traceroute via Scapy using Ether/srp1 with auto-detected gateway MAC.
-
-    Uses Ether layer + srp1() instead of sr1() to correctly route packets
-    on Windows where Scapy cannot resolve ARP automatically.
-
-    min_ttl: first TTL to probe (default 1 = own gateway)
-    max_ttl: upper bound on hops before giving up (default 30)
-
+    Uses Ether layer + srp1() instead of sr1() to correctly route packets on Windows.
     """
     try:
         from scapy.all import IP, ICMP, Ether, srp1, conf
@@ -301,7 +287,6 @@ def run_scapy_traceroute(target: str, min_ttl: int = 1, max_ttl: int = 30, timeo
         except socket.gaierror:
             return [{"error": f"Cannot resolve host: {target}"}]
 
-        # Auto-detect interface and gateway MAC
         active_iface, gw_mac = _get_gateway_mac()
         if not active_iface or not gw_mac:
             return [{"error": "Could not detect gateway MAC. Check network connection."}]
@@ -345,7 +330,7 @@ def run_scapy_traceroute(target: str, min_ttl: int = 1, max_ttl: int = 30, timeo
 def _bezier_points(x0, y0, x1, y1, n=30):
     """Return n points along a quadratic Bezier curve between two nodes."""
     cx = (x0 + x1) / 2
-    cy = (y0 + y1) / 2 + abs(x1 - x0) * 0.18  # soft upward bow
+    cy = (y0 + y1) / 2 + abs(x1 - x0) * 0.18
     pts_x, pts_y = [], []
     for i in range(n + 1):
         t = i / n
@@ -357,37 +342,24 @@ def _bezier_points(x0, y0, x1, y1, n=30):
 
 def build_traceroute_graph(hops: list, target_host: str) -> go.Figure:
     """
-    NmapGUI-like traceroute graph (via Plotly)
-
-    Node colour coding (matches NMapGUI):
-      Cyan  (#38bdf8) — origin / You
-      Green (#22c55e) — target host (reached)
-      Blue  (#3b82f6) — intermediate hops that responded
-      Grey  (#334155) — hops that did NOT respond (* * *)
+    Traceroute network path graph via Plotly.
+    Node colours: Cyan = origin, Green = target, Blue = intermediate, Grey = no response.
     """
     valid_hops = [h for h in hops if h.get("responded", False)]
     total = len(valid_hops)
     if total == 0:
         return None
 
-    # --- Positions ---
-    # NMapGUI scatters nodes in a left-to-right flow 
-    # Uses seeded deterministic offset so the graph is stable between reruns
-    positions = []
     x_step = 10.0 / max(total - 1, 1)
     for i, hop in enumerate(valid_hops):
         base_x = i * x_step
-        # deterministic jitter seeded on IP so same host always lands in same spot
         seed = int(hashlib.md5(hop["ip"].encode()).hexdigest()[:6], 16)
         rng  = random.Random(seed)
         jitter_x = rng.uniform(-x_step * 0.3, x_step * 0.3) if 0 < i < total - 1 else 0
         jitter_y = rng.uniform(-1.8, 1.8) if 0 < i < total - 1 else 0
-        px = base_x + jitter_x
-        py = jitter_y
-        hop["_x"] = px; hop["_y"] = py
-        positions.append((px, py))
+        hop["_x"] = base_x + jitter_x
+        hop["_y"] = jitter_y
 
-    # --- Bezier edge traces ---
     traces = []
     for i in range(len(valid_hops) - 1):
         h0, h1 = valid_hops[i], valid_hops[i+1]
@@ -399,30 +371,19 @@ def build_traceroute_graph(hops: list, target_host: str) -> go.Figure:
             hoverinfo='none', showlegend=False
         ))
 
-    # --- Glow halo (shadow circle, drawn first / behind nodes) ---
-    glow_x, glow_y, glow_colors, glow_sizes = [], [], [], []
+    glow_x, glow_y, glow_colors = [], [], []
     for i, hop in enumerate(valid_hops):
         is_origin = (i == 0)
         is_target = hop.get("is_target", False)
-        if is_origin:
-            gc = "rgba(56,189,248,0.18)"
-        elif is_target:
-            gc = "rgba(34,197,94,0.18)"
-        else:
-            gc = "rgba(59,130,246,0.12)"
-        glow_x.append(hop["_x"]); glow_y.append(hop["_y"])
-        glow_colors.append(gc); glow_sizes.append(30)
-
+        gc = "rgba(56,189,248,0.18)" if is_origin else ("rgba(34,197,94,0.18)" if is_target else "rgba(59,130,246,0.12)")
+        glow_x.append(hop["_x"]); glow_y.append(hop["_y"]); glow_colors.append(gc)
     traces.append(go.Scatter(
-        x=glow_x, y=glow_y,
-        mode='markers',
-        marker=dict(color=glow_colors, size=glow_sizes, line=dict(width=0)),
+        x=glow_x, y=glow_y, mode='markers',
+        marker=dict(color=glow_colors, size=30, line=dict(width=0)),
         hoverinfo='none', showlegend=False
     ))
 
-    # --- Main node trace ---
     n_x, n_y, n_colors, n_sizes, n_borders, n_texts, n_hovers = [], [], [], [], [], [], []
-
     for i, hop in enumerate(valid_hops):
         is_origin = (i == 0)
         is_target = hop.get("is_target", False)
@@ -442,7 +403,6 @@ def build_traceroute_graph(hops: list, target_host: str) -> go.Figure:
             color, sz, border = "#3b82f6", 12, "#2563eb"
             label = ip
 
-        # Tooltip card matching NMapGUI popup style
         hn_line = f"<span style='color:#64748b'>Host: {hostname}</span><br>" if hostname != ip else ""
         hover = (
             f"<b style='color:{color}'>Hop {hop['ttl']}</b><br>"
@@ -461,11 +421,7 @@ def build_traceroute_graph(hops: list, target_host: str) -> go.Figure:
     traces.append(go.Scatter(
         x=n_x, y=n_y,
         mode='markers+text',
-        marker=dict(
-            color=n_colors, size=n_sizes,
-            line=dict(color=n_borders, width=1.5),
-            symbol='circle',
-        ),
+        marker=dict(color=n_colors, size=n_sizes, line=dict(color=n_borders, width=1.5), symbol='circle'),
         text=n_texts,
         textposition='top center',
         textfont=dict(family='JetBrains Mono, monospace', size=8, color='#94a3b8'),
@@ -474,7 +430,6 @@ def build_traceroute_graph(hops: list, target_host: str) -> go.Figure:
         showlegend=False
     ))
 
-    # --- Figure ---
     all_x = [h["_x"] for h in valid_hops]
     all_y = [h["_y"] for h in valid_hops]
     pad_x = max((max(all_x) - min(all_x)) * 0.08, 0.5)
@@ -503,31 +458,16 @@ menu_selection = option_menu(
     default_index=0,
     orientation="horizontal",
     styles={
-        "container": {
-            "padding": "0!important",
-            "background-color": "transparent",
-            "margin-bottom": "15px",
-            "border": "none"
-        },
-        "icon": {
-            "font-size": "16px"
-        },
+        "container": {"padding": "0!important", "background-color": "transparent", "margin-bottom": "15px", "border": "none"},
+        "icon": {"font-size": "16px"},
         "nav-link": {
-            "font-size": "14px",
-            "text-align": "center",
-            "margin": "0px",
-            "--hover-color": "transparent",
-            "color": "#64748b",
-            "border-radius": "0px",
-            "padding": "10px 5px",
-            "border-bottom": "2px solid transparent",
-            "transition": "all 0.3s ease"
+            "font-size": "14px", "text-align": "center", "margin": "0px",
+            "--hover-color": "transparent", "color": "#64748b", "border-radius": "0px",
+            "padding": "10px 5px", "border-bottom": "2px solid transparent", "transition": "all 0.3s ease"
         },
         "nav-link-selected": {
-            "background-color": "transparent",
-            "color": "#e2e8f0",
-            "border-bottom": "2px solid #ff4b4b",
-            "font-weight": "600"
+            "background-color": "transparent", "color": "#e2e8f0",
+            "border-bottom": "2px solid #ff4b4b", "font-weight": "600"
         },
     }
 )
@@ -557,7 +497,9 @@ if menu_selection == "Home":
         st.info("**🌐 Web Based Security Tools**\n\n"
                 "- **Password Strength Analyzer:** Evaluate your passwords' structural complexity.\n"
                 "- **Secure Password Generator:** Create cryptographically secure passwords and SHA-256 hashes.\n"
-                "- **Web Form Validator:** Simulate and sanitize inputs against XSS and SQL injection attacks.")
+                "- **Web Form Validator:** Simulate and sanitize inputs against XSS and SQL injection attacks.\n"
+                "- **URL Expander:** Reveal the real destination behind shortened URLs.\n"
+                "- **URL Scam Scanner:** Analyze URLs for phishing and scam indicators.")
     with col2:
         st.success("**💻 Local Security Tools**\n\n"
                    "- **Network Port Scanner:** Scan local or remote hosts for open ports.\n"
@@ -567,7 +509,7 @@ if menu_selection == "Home":
 # CATEGORY DOS: WEB BASED SECURITY TOOLS
 # ==========================================
 elif menu_selection == "Web Based Security Tools":
-    web_t1, web_t2, web_t3 = st.tabs(["Password Strength Analyzer", "Secure Password Generator", "Web Form Validator"])
+    web_t1, web_t2, web_t3, web_t4, web_t5 = st.tabs(["Password Strength Analyzer", "Secure Password Generator", "Web Form Validator", "URL Expander", "URL Scam Scanner"])
 
     with web_t1:
         c_left, c_center, c_right = st.columns([1, 2, 1])
@@ -589,7 +531,6 @@ elif menu_selection == "Web Based Security Tools":
                     if rating == "WEAK": st.error(f"**{rating}**")
                     elif rating == "MODERATE": st.warning(f"**{rating}**")
                     else: st.success(f"**{rating}**")
-
                 with col_prog:
                     st.progress(percent, text=f"**Strength Score: {percent}%**")
 
@@ -604,6 +545,7 @@ elif menu_selection == "Web Based Security Tools":
         spacer_l, main_col, spacer_r = st.columns([1, 2, 1])
         with main_col:
             st.markdown("### Secure Password Generator")
+            st.caption("Generate cryptographically secure passwords with SHA-256 hashing.")
             c1, c2 = st.columns([3, 1])
             with c1: length = st.slider("Length", 8, 32, 12)
             with c2:
@@ -672,6 +614,87 @@ elif menu_selection == "Web Based Security Tools":
                 elif results['all_valid']:
                     st.info("No sanitization needed. Input is clean.")
 
+    with web_t4:
+        st.markdown("### URL Expander")
+        st.caption("Expand shortened URLs to reveal the final destination and redirect chain.")
+
+        url_input = st.text_input("Shortened URL", placeholder="e.g., https://bit.ly/abc123")
+
+        if st.button("Expand URL", use_container_width=False):
+            if not url_input.strip():
+                st.warning("Please enter a URL first.")
+            else:
+                with st.spinner("Following redirects…"):
+                    expanded = expand_url(url_input.strip())
+                if expanded.startswith("Error"):
+                    st.error(expanded)
+                else:
+                    st.success("URL expanded successfully!")
+                    st.markdown("**Final destination:**")
+                    st.code(expanded, language=None)
+
+    with web_t5:
+        c_left, c_center, c_right = st.columns([1, 2, 1])
+        with c_center:
+            st.markdown("### URL Scam Scanner")
+            st.caption("Analyze a URL for phishing and scam indicators using heuristic rules.")
+
+            scan_input = st.text_input(
+                "URL to scan",
+                placeholder="e.g., https://paypa1.com/login/verify",
+                key="url_scan_input"
+            )
+
+            if st.button("Scan URL", key="btn_scan_url"):
+                if not scan_input.strip():
+                    st.warning("Please enter a URL first.")
+                else:
+                    with st.spinner("Scanning…"):
+                        result = scan_url(scan_input.strip())
+
+                    if result.get("error"):
+                        st.error(f"❌ {result['error']}")
+                    else:
+                        verdict = result["verdict"]
+                        score   = result["score"]
+                        flags   = result["flags"]
+
+                        # Verdict banner
+                        if verdict == "LIKELY MALICIOUS":
+                            st.error(f"🚨 **LIKELY MALICIOUS** — Risk score: {score}")
+                        elif verdict == "SUSPICIOUS":
+                            st.warning(f"⚠️ **SUSPICIOUS** — Risk score: {score}")
+                        else:
+                            st.success("✅ **SAFE** — No significant risk indicators found.")
+
+                        # URL breakdown
+                        st.markdown("---")
+                        st.markdown("**Scanned URL:**")
+                        st.code(result["url"], language=None)
+
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.metric("Domain", result.get("domain", "—"))
+                        with col2:
+                            st.metric("TLD", result.get("tld", "—"))
+
+                        # Flags
+                        if flags:
+                            st.markdown("---")
+                            st.markdown(f"**{len(flags)} risk indicator(s) detected:**")
+                            for f in flags:
+                                sev = f["severity"]
+                                if sev == "HIGH":
+                                    st.error(f"**{f['flag']}**  \n{f['detail']}", icon="🔴")
+                                elif sev == "MEDIUM":
+                                    st.warning(f"**{f['flag']}**  \n{f['detail']}", icon="🟠")
+                                else:
+                                    st.info(f"**{f['flag']}**  \n{f['detail']}", icon="🟡")
+                        else:
+                            st.markdown("---")
+                            st.info("No rule-based indicators triggered. The URL appears structurally clean.")
+
+                        st.caption("⚠️ This tool checks for known structural patterns. It does not guarantee a URL is safe or malicious.")
 
 # ==========================================
 # CATEGORY TRES: LOCAL SECURITY TOOLS
@@ -835,7 +858,7 @@ elif menu_selection == "Local Security Tools":
                     threading.Thread(target=run_scan, daemon=True, name="run_scan").start()
                     st.rerun()
 
-            # --- Scanning in progress ---  
+            # Scanning in progress
             if nps_is_running:
                 thread_state   = st.session_state.get('_thread_state', {})
                 thread_results = st.session_state.get('_thread_results', [])
@@ -855,15 +878,10 @@ elif menu_selection == "Local Security Tools":
                     )
                     with results_placeholder.container():
                         if st.session_state.scan_results_live:
-                            st.dataframe(
-                                pd.DataFrame(st.session_state.scan_results_live),
-                                use_container_width=True
-                            )
+                            st.dataframe(pd.DataFrame(st.session_state.scan_results_live), use_container_width=True)
                         else:
                             st.caption("Waiting for first open port...")
                 else:
-                    # Scan just finished; save results, then force a clean rerun
-                    # so display block below never runs on the same pass as this one
                     st.session_state.scan_running  = False
                     st.session_state.scan_status   = status
                     st.session_state.scan_end_time = time.time()
@@ -871,15 +889,15 @@ elif menu_selection == "Local Security Tools":
                         st.session_state['scan_host']           = target_host
                         st.session_state['open_ports_found']    = list(thread_results)
                         st.session_state['total_ports_scanned'] = thread_state.get("total_scanned", 0)
-                    st.rerun()  # ← KEY: guarantees the two display paths never overlap
+                    st.rerun()
 
-            # --- Scan finished, no results ---
+            # Scan finished, no results
             elif st.session_state.get('scan_status') == 'done' and not st.session_state.get('open_ports_found'):
                 with results_placeholder.container():
                     st.info("Scan complete — no open ports found in the specified range.")
                 st.session_state.scan_status = ""
 
-            # --- Scan finished, show results ---
+            # Scan finished, show results
             elif st.session_state.get('open_ports_found') is not None:
                 df_final = pd.DataFrame(st.session_state['open_ports_found'])
                 with results_placeholder.container():
@@ -896,12 +914,12 @@ elif menu_selection == "Local Security Tools":
                             use_container_width=True
                         )
 
-        # --- VULNERABILITY CHECK ---
+        # Vulnerability check
         if st.session_state.get('open_ports_found') is not None and not nps_is_running:
             open_port_list = [row["Port"] for row in st.session_state['open_ports_found']]
             render_vulnerability_section(open_port_list)
 
-        # --- SCAN VISUALIZATIONS ---
+        # Scan visualizations
         open_ports_data = st.session_state.get('open_ports_found')
         if open_ports_data is not None and not nps_is_running:
             df_viz = pd.DataFrame(open_ports_data)
@@ -915,7 +933,6 @@ elif menu_selection == "Local Security Tools":
             st.markdown("---")
             with st.expander("Scan Analysis", expanded=True):
 
-                # --- STAT/KPI CARDS ---
                 s1, s2, s3, s4 = st.columns(4)
                 with s1:
                     st.markdown(f"""<div class="stat-card"><div class="stat-label">Ports Scanned</div>
@@ -974,12 +991,10 @@ elif menu_selection == "Local Security Tools":
                     port_nums = sorted(df_viz['Port'].tolist())
                     port_services = [get_service_name(p) for p in port_nums]
 
-                    # Build spike traces (one vertical line per open port)
                     spike_traces = []
                     for pn, svc in zip(port_nums, port_services):
                         spike_traces.append(go.Scatter(
-                            x=[pn, pn], y=[0, 1],
-                            mode='lines',
+                            x=[pn, pn], y=[0, 1], mode='lines',
                             line=dict(color='#38bdf8', width=2),
                             hoverinfo='skip', showlegend=False
                         ))
@@ -1010,7 +1025,7 @@ elif menu_selection == "Local Security Tools":
                 else:
                     st.info("No open ports found — nothing to visualize.")
 
-            # --- TRACEROUTE SECTION ---
+            # Traceroute section
             st.markdown("---")
             with st.expander("Network Path — Traceroute", expanded=True):
 
@@ -1020,7 +1035,6 @@ elif menu_selection == "Local Security Tools":
                 if not scapy_ok or not privs_ok:
                     st.warning("⚠️ Traceroute requires admin/root privileges. Restart the app with elevated permissions to enable this feature.", icon="🔒")
                 else:
-                    # Controls row
                     tr_col1, tr_col2, tr_col3, tr_col4 = st.columns([3, 1, 1, 1])
                     with tr_col1:
                         tr_target = st.text_input(
@@ -1058,7 +1072,6 @@ elif menu_selection == "Local Security Tools":
                             reached    = any(h.get("is_target") for h in hops)
                             last_rtt   = next((h["rtt_ms"] for h in reversed(valid_hops) if h.get("rtt_ms")), None)
 
-                            # KPI cards (uniform font-size)
                             tk1, tk2, tk3, tk4 = st.columns(4)
                             with tk1:
                                 st.markdown(f"""<div class="stat-card"><div class="stat-label">Total Hops</div>
@@ -1078,7 +1091,6 @@ elif menu_selection == "Local Security Tools":
 
                             st.markdown("<br>", unsafe_allow_html=True)
 
-                            # Graph panel header + legend
                             st.markdown("""
                                 <div class="tr-controls">
                                     <span class="tr-badge">Network Path</span>
@@ -1112,7 +1124,6 @@ elif menu_selection == "Local Security Tools":
                             if fig_tr:
                                 st.plotly_chart(fig_tr, use_container_width=True, key="traceroute_graph")
 
-                            # Hop detail table
                             with st.expander("Hop Details", expanded=False):
                                 hop_rows = []
                                 for h in hops:
@@ -1269,7 +1280,7 @@ elif menu_selection == "Local Security Tools":
                         os.remove(tmp_path)
                         st.download_button("📥 Export PCAP", data=pcap_bytes, file_name="Traffic.pcap", mime="application/vnd.tcpdump.pcap", use_container_width=True)
 
-            # --- TRAFFIC VISUALIZATIONS ---
+            # Traffic visualizations
             if not st.session_state.capturing and st.session_state.captured_data and not nta_locked:
                 df_traffic = pd.DataFrame(st.session_state.captured_data)
 
@@ -1348,7 +1359,6 @@ elif menu_selection == "Local Security Tools":
                         top_ports = dst_port_df.value_counts().head(10).reset_index()
                         top_ports.columns = ['Port', 'Count']
 
-                        # Treemap (each block sized by packet count, labeled with port + count)
                         fig_dport = go.Figure(go.Treemap(
                             labels=[f":{p}  {c} pkts" for p, c in zip(top_ports['Port'], top_ports['Count'])],
                             parents=[""] * len(top_ports),
@@ -1405,7 +1415,7 @@ elif menu_selection == "Local Security Tools":
                         fig_vendor.update_layout(**PLOTLY_LAYOUT, height=280)
                         st.plotly_chart(fig_vendor, use_container_width=True)
 
-    # Auto-refresh while scans or captures are active since Streamlit doesn't support live-updating outputs without a rerun trigger
+    # Auto-refresh while scans or captures are active
     if nps_is_running or nta_is_running:
         time.sleep(0.3)
         st.rerun()
