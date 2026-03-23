@@ -13,7 +13,7 @@
 MO-IT139_Security_Script_Programming/
 │
 ├── app.py                              # Streamlit main entry point with tabbed interface
-├── README.md                           # Project documentation
+├── README.md                           # Project documentation (Comprehensive)
 │
 ├── data/
 │   ├── dictionary.txt                  # Local word list for password strength checking (optional)
@@ -31,7 +31,9 @@ MO-IT139_Security_Script_Programming/
 │   │   ├── password_generator.py       # Secure password generation + SHA-256 hashing
 │   │   ├── webform_validator.py        # Form validation with XSS/SQL injection detection
 │   │   ├── network_port_scanner.py     # TCP port scanning logic
-│   │   └── network_traffic_analyzer.py # Packet capture with Scapy (requires sudo)
+│   │   ├── network_traffic_analyzer.py # Packet capture with Scapy (requires sudo)
+│   │   ├── url_expander.py             # Expands shortened URLs to their true destination
+│   │   └── url_scam_scanner.py         # Offline phishing/scam URL detection
 │   │
 │   ├── gui/                            # Tkinter tabs (legacy, not used)
 │   │   ├── password_strength_tab.py    # Strength analyzer interface (legacy)
@@ -44,11 +46,13 @@ MO-IT139_Security_Script_Programming/
 │   └── utils/
 │       ├── dictionary.py               # Dictionary loading (local + NLTK)
 │       ├── genPassStorage.py           # Password hash storage (NO raw passwords)
-│       └── security_logger.py          # Security event logging (attacks, sanitization)
+│       ├── security_logger.py          # Security event logging (attacks, sanitization)
+│       └── port_vulnerability_db.py    # Port risk data, CVE lookups, and data visualization backend
 │
 └── assets/
     └── screenshots/                    # UI screenshots
 ```
+*New features and files (url_expander.py, url_scam_scanner.py, port_vulnerability_db.py) are included in the Streamlit version and may not appear in legacy Tkinter code.
 
 </details>
 
@@ -57,6 +61,7 @@ MO-IT139_Security_Script_Programming/
 <details>
 <summary> 🔐 Password Strength Analyzer </summary>
 <br>
+Analyzes password strength using structural and veto checks, with instant feedback and SHA-256 hashing. Integrated into the Streamlit GUI.
 
 ### load_dictionary()
 **Purpose**: Loads a local dictionary file (dictionary.txt) into a Python list used to detect words inside passwords.
@@ -72,6 +77,7 @@ MO-IT139_Security_Script_Programming/
 - Fallback words: ["apple", "computer", "dragon", "monkey", "secret"]
 - *Fun fact: these fallback words are surprisingly common in real passwords... please don't use them!*
 
+All password checks and feedback are available in real time via the Streamlit interface. No raw passwords are ever saved—only hashes are stored in data/passwords.txt.
 ---
 
 ### load_nltk_words(min_len=4, max_len=None)
@@ -155,7 +161,7 @@ MO-IT139_Security_Script_Programming/
 
 ### generate_password(length=12)
 **Purpose**: Generate a cryptographically secure password.
-
+Generates cryptographically secure passwords and hashes them with SHA-256 + random salt. Integrated into the Streamlit GUI.
 **Parameters**:
 - `length` (int, default=12): Desired password length (clamped to 8-16)
 
@@ -202,13 +208,13 @@ MO-IT139_Security_Script_Programming/
 **Security**: Raw password is NEVER written to disk, only hash and salt are stored. *(and it should stay that way — please don't change this!)*
 
 </details>
-
+Generated passwords are never saved to disk. Only hashes (with optional notes) are stored in data/passwords.txt. All actions are available in the Streamlit interface
 ---
 
 <details>
 <summary> 📝 Web Form Validator & Sanitizer </summary>
 <br>
-
+Validates and sanitizes web form inputs (Full Name, Email, Username, Message) for XSS, SQL injection, and disposable emails. All checks and feedback are available in the Streamlit GUI.
 ### validate_full_name(name)
 **Purpose**: Validate full name field with security checks.
 
@@ -299,13 +305,13 @@ MO-IT139_Security_Script_Programming/
 - `has_empty_fields`: Boolean if required fields missing
 
 </details>
-
+All validation and sanitization actions are logged to data/security_log.txt. The Streamlit interface provides instant feedback and displays sanitized output.
 ---
 
 <details>
 <summary> 🔍 Network Port Scanner </summary>
 <br>
-
+Scans a host for open TCP ports using presets or custom ranges. Results are shown in real time in the Streamlit GUI.
 ### Overview
 Scans TCP ports on a target host to identify open/closed ports. Includes preset categories for common services (Web, Mail, Gaming, etc.).
 
@@ -425,13 +431,13 @@ Scans TCP ports on a target host to identify open/closed ports. Includes preset 
 *Yes, we added gaming ports. Priorities~ *
 
 </details>
-
+Scan results can be exported. Port/service mappings and presets are included for common services and games. All actions are available in the Streamlit interface.
 ---
 
 <details>
 <summary> 📡 Network Traffic Analyzer </summary>
 <br>
-
+Captures and analyzes live network packets using Scapy. Supports protocol/port/IP filtering and displays results in real time in the Streamlit GUI.
 ### Overview
 Captures and analyzes network packets using Scapy. Requires administrator/root privileges. Supports BPF (Berkeley Packet Filter) for filtering traffic.
 
@@ -444,6 +450,57 @@ Captures and analyzes network packets using Scapy. Requires administrator/root p
 - Admin/root privileges (sudo on macOS/Linux, Run as Administrator on Windows)
 
 *If it says "permission denied" > you forgot sudo! Don't worry, we've all been there~*
+Requires admin/sudo privileges for packet capture. Captured data can be exported as CSV or PCAP. All actions are available in the Streamlit interface.
+
+
+
+<details>
+<summary> 🔗 URL Expander </summary>
+<br>
+**Summary:**  
+Expands shortened URLs to reveal their true destination without visiting the site. Useful for checking suspicious links.  
+
+**How to Use:**  
+Enter a shortened URL in the Streamlit GUI. The expanded URL will be displayed instantly.  
+
+**Notes:**  
+Requires internet access. All actions are performed client-side; no URLs are visited.
+</details>
+
+---
+
+<details>
+<summary> 🛑 URL Scam Scanner </summary>
+<br>
+**Summary:**  
+Analyzes URLs for phishing or scam indicators using offline heuristics and pattern matching.  
+
+**How to Use:**  
+Paste a URL in the Streamlit GUI. The tool will flag suspicious patterns and provide a risk assessment.  
+
+**Notes:**  
+Works offline. No data is sent externally. Detection is based on local rules and patterns.
+</details>
+
+---
+
+<details>
+<summary> 📊 Data Visualization & Port Vulnerability DB </summary>
+<br>
+**Summary:**  
+Visualizes port scan results, network data, and port risk levels using interactive charts (Plotly). Integrates with a local vulnerability database for CVE lookups.  
+
+**How to Use:**  
+After scanning or capturing data, view the “Data Visualization” tab in the Streamlit GUI to see graphs and risk summaries.  
+
+**Notes:**  
+All visualizations are generated locally. CVE lookups use a bundled/offline database.
+</details>
+
+---
+
+**Integration Note:**  
+These features are only available in the Streamlit version. 
 
 ---
 
