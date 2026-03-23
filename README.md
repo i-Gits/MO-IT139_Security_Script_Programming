@@ -35,6 +35,13 @@ Section 1: Header + Last Updated--->
 
 ## Features Overview
 
+
+<details>
+    <summary> Home Screen </summary>
+    <img width="1080" height="679" alt="image" src="https://github.com/user-attachments/assets/0bb2490b-bd50-43a8-bc52-a4b5fd2cf432" />
+
+
+</details>
 <details>
 <summary> 1. Password Strength Analyzer </summary>
 <br>
@@ -52,9 +59,13 @@ Analyzes password structure and flags weak passwords.
 <br>
 
 <!-- ![Password Strength Analyzer]() -->
-*Screenshot pending*
-
-Push note: pushed via VSCODE; no ubuildt in screenshot upload; in comparison, github query feature can be used as temp image upload and link generator
+<img width="843" height="621" alt="image" src="https://github.com/user-attachments/assets/cbe39861-afce-44c6-9bec-35fe6eb18cf5" />
+<br>
+<br>
+test password
+<br>
+<br>
+<img width="859" height="662" alt="image" src="https://github.com/user-attachments/assets/fd043b89-9ef7-421d-85c4-47a3f43b9fb6" />
 
 </details>
 
@@ -76,7 +87,12 @@ Cryptographically secure passwords with SHA-256 hashing.
 <br>
 
 <!-- ![Password Generator]() -->
-*Screenshot pending*
+<img width="835" height="558" alt="image" src="https://github.com/user-attachments/assets/3004ac35-6a56-4385-8dfa-9b7968433e80" />
+<br>
+<br> Generated Password (Sample)
+<br>
+
+<img width="846" height="830" alt="image" src="https://github.com/user-attachments/assets/ada682ac-1e12-4bc5-b897-5828ca5f87ad" />
 
 </details>
 
@@ -100,7 +116,8 @@ XSS and SQL injection detection with sanitization.
 <br>
 
 <!-- ![Web Form Validator]() -->
-*Screenshot pending*
+<img width="901" height="674" alt="image" src="https://github.com/user-attachments/assets/7a59b0d5-87c6-4044-86c3-36b06aa2fc42" />
+
 
 </details>
 
