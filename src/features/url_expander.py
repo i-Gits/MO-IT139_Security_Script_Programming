@@ -1,5 +1,3 @@
-# src/features/url_expander.py
-
 import requests
 
 def expand_url(short_url):

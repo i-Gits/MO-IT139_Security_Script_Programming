@@ -7,14 +7,47 @@ Section 1: Header + Last Updated--->
 # 🛡️ PASSECURIST
 **A Comprehensive Security Toolkit**
 
+## Quick Start
+Requirements:
+Python 3.8+, macOS/Windows/Linux. For network tools, run as admin/sudo.
+
+Setup & Launch:
+
+For network features (Traffic Analyzer, Port Scanner), use sudo or run as Administrator.
+
+Data & Logs:
+All logs and password hashes are saved in the data folder.
+
+Features at a Glance:
+Access all tools from the Streamlit web GUI:
+
+Password Strength Analyzer <br>
+Secure Password Generator   <br> 
+Web Form Validator<br>
+Network Port Scanner<br>
+Network Traffic Analyzer<br>
+*URL Expander <br>
+*URL Scam Scanner<br>
+*Data Visualization <br>
+<br>
+<br>
+
+Navigation:
+Use the sidebar to switch between tools. New features are marked as “new” in the interface.
+
+Need more?
+See Documentation.md for advanced usage, troubleshooting, and details.
+
+
 <details>
 <summary> 📅 Last Updated </summary>
 <br>
 
 | Date | Branch | Notes |
 |------|--------|-------|
-| March 8, 2026 | `ms2-dataviz` | Plotly visualizations, traceroute graph, cross-platform gateway detection |
-| March 2, 2026 | `milestone2-revised` | Added PCAP export, no-limit scanning, stop/pause/resume |
+| March 24, 2026 | `ta-draft`         | Terminal Assessment features, bug fixes, expanded test coverage        |
+| March 8, 2026  | `ms2-dataviz`      | Plotly visualizations, traceroute graph, cross-platform gateway detection |
+| March 2, 2026 | `milestone2-revised` | Added PCAP export, no-limit scanning, pause/resume |
 | February 24, 2026 | `milestone2` | Added Network Port Scanner, Traffic Analyzer |
 | February 1, 2026 | `gui` | Migrated from Tkinter to Streamlit |
 | January 27, 2026 | `ms1_draft` | Added SHA-256 hashing, security logger |
@@ -29,13 +62,20 @@ Section 1: Header + Last Updated--->
 |----------|------|
 | Repository | [GitHub](https://github.com/i-Gits/MO-IT139_Security_Script_Programming.git) |
 | Project Plan | [Google Sheets](https://docs.google.com/spreadsheets/d/1oXL5hJg6MRoZwp_r84P0JkorvVMnKP5bkcYPTfBOUP0/edit?usp=sharing) |
-| Current Branch | `ms2-dataviz` | AS OF MARCH 08, 2026 |
+| Current Branch | `ta-draft` | AS OF MARCH 24, 2026 | 02:27:00 
 
 
 ---
 
 ## Features Overview
 
+
+<details>
+    <summary> Home Screen </summary>
+    <img width="1080" height="679" alt="image" src="https://github.com/user-attachments/assets/0bb2490b-bd50-43a8-bc52-a4b5fd2cf432" />
+
+
+</details>
 <details>
 <summary> 1. Password Strength Analyzer </summary>
 <br>
@@ -56,6 +96,13 @@ Analyzes password structure and flags weak passwords.
 *Screenshot pending*
 
 Push note: pushed via VSCODE; no ubuildt in screenshot upload; in comparison, github query feature can be used as temp image upload and link generator
+<img width="843" height="621" alt="image" src="https://github.com/user-attachments/assets/cbe39861-afce-44c6-9bec-35fe6eb18cf5" />
+<br>
+<br>
+test password
+<br>
+<br>
+<img width="859" height="662" alt="image" src="https://github.com/user-attachments/assets/fd043b89-9ef7-421d-85c4-47a3f43b9fb6" />
 
 </details>
 
@@ -78,6 +125,12 @@ Cryptographically secure passwords with SHA-256 hashing.
 
 <!-- ![Password Generator]() -->
 *Screenshot pending*
+<img width="835" height="558" alt="image" src="https://github.com/user-attachments/assets/3004ac35-6a56-4385-8dfa-9b7968433e80" />
+<br>
+<br> Generated Password (Sample)
+<br>
+
+<img width="846" height="830" alt="image" src="https://github.com/user-attachments/assets/ada682ac-1e12-4bc5-b897-5828ca5f87ad" />
 
 </details>
 
@@ -102,6 +155,8 @@ XSS and SQL injection detection with sanitization.
 
 <!-- ![Web Form Validator]() -->
 *Screenshot pending*
+<img width="901" height="674" alt="image" src="https://github.com/user-attachments/assets/7a59b0d5-87c6-4044-86c3-36b06aa2fc42" />
+
 
 </details>
 
@@ -124,6 +179,21 @@ TCP port scanning with preset categories and real-time results.
 - Interactive Plotly charts — Open vs Closed donut, Service Category bar, Port Number spike chart, KPI stat cards
 - Scapy traceroute with Plotly network path graph, hop detail table, cross-platform gateway detection
 
+<br>
+<br>
+
+# New Features
+
+<details>
+<summary> 4. Network Port Scanner </summary>
+<br>
+Scan TCP ports on any host with real-time validation, service identification, and detailed results.
+
+- Preset categories for common services (Web, Mail, Gaming, etc.)
+- Custom port range scanning
+- Service name lookup for known ports
+- Vulnerability info integration (see Data Visualization)
+
 <details>
 <summary> 📸 Screenshot </summary>
 <br>
@@ -133,6 +203,9 @@ TCP port scanning with preset categories and real-time results.
 
 </details>
 
+<!-- ![Network Port Scanner](PLACEHOLDER_FOR_PORT_SCANNER_IMAGE) -->
+*Screenshot pending*
+</details>
 </details>
 
 <details>
@@ -150,6 +223,12 @@ Real-time packet capture with BPF filtering and export. Requires administrator/r
 - Locks out Network Port Scanner while capture is active to prevent conflicts
 - Interactive Plotly charts — Protocol donut, Top Talkers bar, Destination Ports treemap, Packet Timeline, Vendor breakdown donut, KPI stat cards
 - Unique Sources and Destinations now correctly exclude N/A entries from Unknown/ARP packets
+Capture and analyze real-time network packets with protocol filtering and detailed packet inspection.
+
+- Live packet capture (requires admin/sudo)
+- BPF filter support (protocol, port, IP)
+- PCAP export functionality
+- Pause/resume controls
 
 <details>
 <summary> 📸 Screenshot </summary>
@@ -162,6 +241,60 @@ Real-time packet capture with BPF filtering and export. Requires administrator/r
 
 </details>
 
+<!-- ![Network Traffic Analyzer](PLACEHOLDER_FOR_TRAFFIC_ANALYZER_IMAGE) -->
+*Screenshot pending*
+</details>
+</details>
+
+<details>
+<summary> 6. URL Expander </summary>
+<br>
+Reveal the real destination behind shortened URLs.
+
+- Supports most major URL shorteners
+- Displays expanded URL and HTTP status
+
+<details>
+<summary> 📸 Screenshot </summary>
+<br>
+<!-- ![URL Expander](PLACEHOLDER_FOR_URL_EXPANDER_IMAGE) -->
+*Screenshot pending*
+</details>
+</details>
+
+<details>
+<summary> 7. URL Scam Scanner </summary>
+<br>
+Analyze URLs for phishing and scam indicators using offline heuristics.
+
+- 8-point risk scoring (IP as domain, typosquatting, suspicious TLDs, etc.)
+- Brand impersonation detection
+- URLhaus API integration (see Known Issues)
+
+<details>
+<summary> 📸 Screenshot </summary>
+<br>
+<!-- ![URL Scam Scanner](PLACEHOLDER_FOR_URL_SCAM_SCANNER_IMAGE) -->
+*Screenshot pending*
+</details>
+</details>
+
+<details>
+<summary> 8. Data Visualization (Port Vulnerability Visualization) </summary>
+<br>
+Visualize open port risks and vulnerabilities using Plotly.
+
+- Per-port risk badges (Critical, High, Medium, Low, Unknown)
+- Traceroute graph visualization
+- Cross-platform gateway detection
+
+<details>
+<summary> 📸 Screenshot </summary>
+<br>
+<!-- ![Data Visualization](PLACEHOLDER_FOR_DATA_VISUALIZATION_IMAGE) -->
+*Screenshot pending*
+</details>
+</details>
 ---
 
 # 🚀 How to Run
@@ -173,6 +306,13 @@ Real-time packet capture with BPF filtering and export. Requires administrator/r
 ```bash
 # 1. Clone the repository
 git clone https://github.com/i-Gits/MO-IT139_Security_Script_Programming.git
+
+# 2. Create virtual environment
+python -m venv .venv
+
+# 3. Activate virtual environment
+.venv\Scripts\activate
+
 
 # 2. Create virtual environment
 python -m venv .venv
@@ -260,7 +400,7 @@ to verify online/ask for guidance
 MO-IT139_Security_Script_Programming/
 │
 ├── app.py                              # Streamlit main entry point with tabbed interface
-├── README.md                           # Project documentation (you are here~!)
+├── README.md                           # Project documentation (you are here~r!)
 │
 ├── data/
 │   ├── dictionary.txt                  # Local word list for password strength checking (optional)
@@ -278,7 +418,10 @@ MO-IT139_Security_Script_Programming/
 │   │   ├── password_generator.py       # Secure password generation + SHA-256 hashing
 │   │   ├── webform_validator.py        # Form validation with XSS/SQL injection detection
 │   │   ├── network_port_scanner.py     # TCP port scanning logic
-│   │   └── network_traffic_analyzer.py # Packet capture with Scapy (requires sudo)
+│   │   ├── network_traffic_analyzer.py # Packet capture with Scapy (requires sudo)
+│   │   ├── url_expander.py            # URL expansion (shortener reveal)
+│   │   └── url_scam_scanner.py         # Offline URL scam/phishing scanner
+│   │
 │   │
 │   ├── gui/                            # Tkinter tabs (legacy, not used)
 │   │   ├── password_strength_tab.py    # Strength analyzer interface (legacy)
@@ -291,8 +434,8 @@ MO-IT139_Security_Script_Programming/
 │   └── utils/
 │       ├── dictionary.py               # Dictionary loading (local + NLTK)
 │       ├── genPassStorage.py           # Password hash storage (NO raw passwords)
-│       └── security_logger.py          # Security event logging (attacks, sanitization)
-│
+│       ├── security_logger.py          # Security event logging (attacks, sanitization)
+│       └── port_vulnerability_db.py    # Port risk data, CVE lookups, Plotly            visualizations
 └── assets/
     └── screenshots/                    # UI screenshots
 ```
@@ -312,6 +455,10 @@ MO-IT139_Security_Script_Programming/
 | `src/features/webform_validator.py` | XSS/SQL injection detection |
 | `src/features/network_port_scanner.py` | TCP port scanning |
 | `src/features/network_traffic_analyzer.py` | Packet capture with Scapy |
+| `src/features/url_expander.py`          | URL expansion (shortener reveal)                             |
+| `src/features/url_scam_scanner.py`      | Offline URL scam/phishing scanner                            |
+`src/utils/port_vulnerability_db.py`    | Port risk data, CVE lookups, Plotly visualizations           |
+| 
 | `src/utils/security_logger.py` | Attack/sanitization logging |
 | `data/passwords.txt` | Hash storage (NO raw passwords) |
 | `data/security_log.txt` | Audit trail |
@@ -375,7 +522,15 @@ MO-IT139_Security_Script_Programming/
 - No spaces, consecutive dots, or invalid characters
 - Should not start with a special character
 - Blocks disposable email domains
-- *RFC = Request for Comments; basically official internet rulebook for email formatting w/c is Max 320 characters total, Local part (before @) max 64 chars, Domain (after @) max 255 chars, Valid characters allowed*
+-* *RFC = Request for Comments; basically official internet rulebook for email formatting
+w/c is 
+Max 320 characters total
+Local part (before @) max 64 chars
+Domain (after @) max 255 chars
+Valid characters allowed
+
+
+
 
 </details>
 
@@ -401,61 +556,6 @@ MO-IT139_Security_Script_Programming/
 - Logs attack attempts (SQL injection, XSS) to security log
 
 </details>
-
-</details>
-
----
-
-<details>
-<summary> 🔍 Port Scanner Configuration </summary>
-<br>
-
-### Port Presets
-| Category | Key Ports | Description |
-|----------|-----------|-------------|
-| Web Services | 80, 443 | HTTP and HTTPS |
-| Mail Services | 25, 110, 143 | SMTP, POP3, IMAP |
-| Remote Access & Management | 22, 23, 3389 | SSH, Telnet, RDP |
-| Directory / Authentication | 88, 389, 464, 636 | Kerberos, LDAP, LDAPS |
-| File Transfer & Sharing | 20, 21, 69, 445 | FTP, TFTP, SMB |
-| Network Core | 53, 67, 68, 123 | DNS, DHCP, NTP |
-| Network Management & Monitoring | 161 | SNMP |
-| Communication, VoIP, and Chat | 194, 1720, 5060, 5061 | IRC, H.323, SIP |
-| Legacy and Testing | 7, 23 | Echo, Telnet |
-| Steam | 80, 443, 27000–27100 | Steam platform ports |
-| Valorant | 80, 443, 7000–8000 | Valorant game ports |
-
-*Yes, we added gaming ports. Priorities~*
-
-### Custom Range Rules
-- Both start and end ports must be integers (1–65535)
-- Start port must be ≤ end port
-- Maximum range: 10,000 ports per scan
-- Single port (start == end) is allowed
-
-</details>
-
----
-
-<details>
-<summary> 📡 Traffic Analyzer Filter Reference </summary>
-<br>
-
-### BPF Filter Fields
-| Field | Accepted Input | Example |
-|-------|----------------|---------|
-| Protocol | tcp, udp, icmp, ip, arp, ip6 | `tcp` |
-| Port | Any valid port number | `443` |
-| General IP/Host | IP address or hostname | `192.168.1.1` |
-| Source IP | IP address or hostname | `10.0.0.5` |
-| Destination IP | IP address or hostname | `8.8.8.8` |
-
-- Filters are combined with `and` (e.g., `tcp and port 80 and host 192.168.1.1`)
-- Leave all fields empty to capture all traffic
-- Hostnames are resolved to IPs automatically before capture starts
-
-### MAC Vendor Lookup
-Detected source vendors include: VMware, Microsoft (Hyper-V), Google, Apple, Intel, Cisco. Unrecognized MACs display as "Generic Device".
 
 </details>
 
@@ -509,28 +609,6 @@ Both are logged in security_log.txt
 
 
 </details>
-</details>
-
-<details>
-<summary> Network Port Scanner </summary>
-
-- ✓ TCP socket-based port scanning
-- ✓ Host validation before scan starts (resolves hostname to IP)
-- ✓ Configurable timeout per port (default: 0.5s)
-- ✓ Cancel-safe: scan thread checks for stop signal between each port
-- ✓ Results exported as timestamped CSV
-
-</details>
-
-<details>
-<summary> Network Traffic Analyzer </summary>
-
-- ✓ Privilege check before capture starts (blocks unprivileged runs)
-- ✓ BPF filter validation before applying to Scapy
-- ✓ Raw packets stored in memory for accurate PCAP export
-- ✓ Ping timeout safeguard: auto-stops capture after 30s of inactivity
-- ✓ Tool mutex: Port Scanner and Traffic Analyzer cannot run simultaneously
-
 </details>
 
 </details>
@@ -604,8 +682,7 @@ pip install streamlit pandas nltk scapy streamlit-keyup streamlit-option-menu cr
 | **MS1 (Final)** | Jan 27, 2026 | Bug fixes, security logging system |
 | **MS2 (GUI)** | Feb 1, 2026 | Migrated from Tkinter to Streamlit |
 | **MS2** | Feb 24, 2026 | Added Network Port Scanner, Traffic Analyzer |
-| **MS2-revised** | Mar 2, 2026 | PCAP export, no-limit scanning, pause/resume, BPF filters, src/dst IP filtering, process termination fixes |
-| **MS2-dataviz** | Mar 8, 2026 | Plotly visualizations for NPS and NTA, traceroute network graph, cross-platform gateway detection, N/A IP exclusion |
+| **MS2-revised** | Mar 2, 2026 | PCAP export, no-limit scanning, pause/resume, BPF filters |
 
 <details>
 <summary> MS1 Details </summary>
@@ -635,18 +712,6 @@ pip install streamlit pandas nltk scapy streamlit-keyup streamlit-option-menu cr
 - No-limit packet capture option
 - Pause/Resume controls
 - BPF filter support
-- Source/Destination IP filtering
-- Fixed process termination on tab/menu switch
-- Fixed scan stop/cancel event handling
-- Fixed capture ping timeout safeguard
-
-**Revisions (Mar 8, 2026):**
-- 3 Plotly charts for NPS: Open vs Closed donut, Service Category bar, Port Number Line spike chart
-- 5 Plotly charts for NTA: Protocol donut, Top Talkers bar, Destination Ports treemap, Packet Timeline, Vendor breakdown donut
-- KPI stat cards for both NPS and NTA
-- Scapy traceroute with Plotly network path graph (Bezier edges, glow halos, NmapGUI-style node coloring)
-- Traceroute hop detail table with TTL, IP, hostname, RTT, ICMP type, status
-- Cross-platform gateway detection: Windows (`route print`), macOS (`route -n get default`), Linux (subnet .1 fallback)
 
 </details>
 
@@ -665,7 +730,6 @@ pip install streamlit pandas nltk scapy streamlit-keyup streamlit-option-menu cr
 | **Security logs** | All validation events logged to `data/security_log.txt` |
 | **User privacy** | Users only see clean error messages, not detailed logs ~ as it should be|
 | **Traffic Analyzer** | Requires sudo (macOS/Linux) or Admin (Windows) |
-| **Tool Conflicts** | Port Scanner and Traffic Analyzer cannot run at the same time — one locks the other |
 
 </details>
 
