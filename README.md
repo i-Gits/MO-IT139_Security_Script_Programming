@@ -93,6 +93,9 @@ Analyzes password structure and flags weak passwords.
 <br>
 
 <!-- ![Password Strength Analyzer]() -->
+*Screenshot pending*
+
+Push note: pushed via VSCODE; no ubuildt in screenshot upload; in comparison, github query feature can be used as temp image upload and link generator
 <img width="843" height="621" alt="image" src="https://github.com/user-attachments/assets/cbe39861-afce-44c6-9bec-35fe6eb18cf5" />
 <br>
 <br>
@@ -121,6 +124,7 @@ Cryptographically secure passwords with SHA-256 hashing.
 <br>
 
 <!-- ![Password Generator]() -->
+*Screenshot pending*
 <img width="835" height="558" alt="image" src="https://github.com/user-attachments/assets/3004ac35-6a56-4385-8dfa-9b7968433e80" />
 <br>
 <br> Generated Password (Sample)
@@ -150,6 +154,7 @@ XSS and SQL injection detection with sanitization.
 <br>
 
 <!-- ![Web Form Validator]() -->
+*Screenshot pending*
 <img width="901" height="674" alt="image" src="https://github.com/user-attachments/assets/7a59b0d5-87c6-4044-86c3-36b06aa2fc42" />
 
 
@@ -157,6 +162,22 @@ XSS and SQL injection detection with sanitization.
 
 </details>
 
+<details>
+<summary> 4. Network Port Scanner </summary>
+<br>
+
+TCP port scanning with preset categories and real-time results.
+
+- Scans a target host (IP or hostname) for open TCP ports
+- Preset categories for quick port selection: Web, Mail, Remote Access, File Transfer, Network Core, Gaming (Steam, Valorant), and more
+- Supports custom port ranges (1–65535, max 10,000 ports per scan)
+- Real-time scan progress with live results table
+- Stop/cancel scan mid-run without waiting for completion
+- Identifies service names for discovered open ports
+- Exports scan results as a CSV report
+- Locks out Traffic Analyzer while a scan is active to prevent conflicts
+- Interactive Plotly charts — Open vs Closed donut, Service Category bar, Port Number spike chart, KPI stat cards
+- Scapy traceroute with Plotly network path graph, hop detail table, cross-platform gateway detection
 
 <br>
 <br>
@@ -176,6 +197,12 @@ Scan TCP ports on any host with real-time validation, service identification, an
 <details>
 <summary> 📸 Screenshot </summary>
 <br>
+
+<!-- ![Network Port Scanner]() -->
+*Screenshot pending*
+
+</details>
+
 <!-- ![Network Port Scanner](PLACEHOLDER_FOR_PORT_SCANNER_IMAGE) -->
 *Screenshot pending*
 </details>
@@ -184,6 +211,18 @@ Scan TCP ports on any host with real-time validation, service identification, an
 <details>
 <summary> 5. Network Traffic Analyzer </summary>
 <br>
+
+Real-time packet capture with BPF filtering and export. Requires administrator/root privileges.
+
+- Captures live network packets using Scapy
+- BPF (Berkeley Packet Filter) support: filter by protocol, port, host, source IP, and destination IP
+- MAC vendor lookup for source device identification
+- Configurable packet limit (set to 0 for unlimited capture)
+- Pause and Resume capture without losing previously captured packets
+- Exports captured traffic as CSV or PCAP (compatible with Wireshark)
+- Locks out Network Port Scanner while capture is active to prevent conflicts
+- Interactive Plotly charts — Protocol donut, Top Talkers bar, Destination Ports treemap, Packet Timeline, Vendor breakdown donut, KPI stat cards
+- Unique Sources and Destinations now correctly exclude N/A entries from Unknown/ARP packets
 Capture and analyze real-time network packets with protocol filtering and detailed packet inspection.
 
 - Live packet capture (requires admin/sudo)
@@ -194,6 +233,14 @@ Capture and analyze real-time network packets with protocol filtering and detail
 <details>
 <summary> 📸 Screenshot </summary>
 <br>
+
+<!-- ![Network Traffic Analyzer]() -->
+*Screenshot pending*
+
+</details>
+
+</details>
+
 <!-- ![Network Traffic Analyzer](PLACEHOLDER_FOR_TRAFFIC_ANALYZER_IMAGE) -->
 *Screenshot pending*
 </details>
@@ -259,6 +306,13 @@ Visualize open port risks and vulnerabilities using Plotly.
 ```bash
 # 1. Clone the repository
 git clone https://github.com/i-Gits/MO-IT139_Security_Script_Programming.git
+
+# 2. Create virtual environment
+python -m venv .venv
+
+# 3. Activate virtual environment
+.venv\Scripts\activate
+
 
 # 2. Create virtual environment
 python -m venv .venv

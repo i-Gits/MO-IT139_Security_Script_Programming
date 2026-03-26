@@ -117,7 +117,7 @@ def validate_filter(proto: str = "", port: str = "", host: str = "", src_ip: str
         except socket.gaierror as e:
             return False, f"Cannot resolve Source IP/Host: '{src_clean}' ({e})"
 
-    # --- NEW: Destination IP Filter ---
+    # --- Destination IP Filter ---
     if dst_ip:
         dst_clean = dst_ip.strip()
         try:
