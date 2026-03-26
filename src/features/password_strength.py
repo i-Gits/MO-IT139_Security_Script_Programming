@@ -24,24 +24,26 @@ def evaluate_password_strength(password):
     
     score = 0
     feedback = []
+    passed_feedback = []
     
     # Structural checks (5 total)
     # Used safe membership check for special characters instead of regex which can crash on punctuation metacharacters
     special_char = any(ch in string.punctuation for ch in password)
     
     checks = [
-        (len(password) >= 12, "Length < 12"),
-        (re.search(r"[A-Z]", password), "No uppercase letter"),
-        (re.search(r"[a-z]", password), "No lowercase letter"),
-        (re.search(r"[0-9]", password), "No number"),
-        (special_char, "No special character")
+        (len(password) >= 12, "Length < 12", "✅ Length >= 12 "),
+        (re.search(r"[A-Z]", password), "No uppercase letter", "✅ Contains uppercase letter "),
+        (re.search(r"[a-z]", password), "No lowercase letter", "✅ Contains lowercase letter "),
+        (re.search(r"[0-9]", password), "No number", "✅ Contains number "),
+        (special_char, "No special character", "✅ Contains special character ")
     ]
     
-    for passed, msg in checks:
+    for passed, fail_msg, success_msg in checks:
         if passed:
             score += 1
+            passed_feedback.append(success_msg)
         else:
-            feedback.append(msg)
+            feedback.append(fail_msg)
     
     # Veto checks
     is_common = password.lower() in COMMON_PASSWORDS
@@ -57,22 +59,24 @@ def evaluate_password_strength(password):
     
     if is_common:
         feedback.insert(0, "⚠ Common password detected. Don't get lazy!")
+    else:
+        passed_feedback.append("✅ Not a common password")
+        score += 1
+        
     if has_dictionary_word:
         feedback.insert(0, f"Contains dictionary word: '{found_word}'")
+    else:
+        passed_feedback.append("✅ No dictionary words found ")
+        score += 1
     
-    # Bonus points for not being vetoed
-    if not is_common:
-        score += 1
-    if not has_dictionary_word:
-        score += 1
     
     # Final rating (max score = 7)
     if is_common or has_dictionary_word:
-        return "WEAK", COLOR_WEAK, feedback
+        return "WEAK", COLOR_WEAK, feedback + passed_feedback
     
     if score <= 4:
-        return "WEAK", COLOR_WEAK, feedback
+        return "WEAK", COLOR_WEAK, feedback + passed_feedback
     elif score <= 6:
-        return "MODERATE", COLOR_MOD, feedback
+        return "MODERATE", COLOR_MOD, feedback + passed_feedback
     else:
-        return "STRONG", COLOR_STRONG, ["Excellent password structure! Keep it up."] if not feedback else feedback
+        return "STRONG", COLOR_STRONG, ["Excellent!"] + passed_feedback

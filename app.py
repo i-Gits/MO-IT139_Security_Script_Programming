@@ -536,7 +536,7 @@ elif menu_selection == "Web Based Security Tools":
 
                 with st.expander("Security Analysis Details", expanded=True):
                     for msg in feedback:
-                        if "Correct" in msg or "Excellent" in msg: st.markdown(f":green[✅ {msg}]")
+                        if "✅" in msg or "Excellent" in msg: st.markdown(f":green[ {msg}]")
                         else: st.markdown(f":orange[⚠️ {msg}]")
             else:
                 st.info("Start typing a password to see real-time analysis.")
