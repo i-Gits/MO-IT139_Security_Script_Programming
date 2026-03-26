@@ -45,6 +45,7 @@ See Documentation.md for advanced usage, troubleshooting, and details.
 
 | Date | Branch | Notes |
 |------|--------|-------|
+| March 26, 2026 | `main`         | Terminal Assessment features, bug fixes, expanded test coverage features from `ta-draft`, `ms2-dataviz`, etc. has been merged; bug fixes   |
 | March 24, 2026 | `ta-draft`         | Terminal Assessment features, bug fixes, expanded test coverage        |
 | March 8, 2026  | `ms2-dataviz`      | Plotly visualizations, traceroute graph, cross-platform gateway detection |
 | March 2, 2026 | `milestone2-revised` | Added PCAP export, no-limit scanning, pause/resume |
