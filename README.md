@@ -200,7 +200,8 @@ Scan TCP ports on any host with real-time validation, service identification, an
 <br>
 
 <!-- ![Network Port Scanner]() -->
-*Screenshot pending*
+<img width="1000" height="670" alt="image" src="https://github.com/user-attachments/assets/a21a89c6-f165-48eb-ba26-9e085b546f2c" />
+
 
 </details>
 
@@ -236,14 +237,16 @@ Capture and analyze real-time network packets with protocol filtering and detail
 <br>
 
 <!-- ![Network Traffic Analyzer]() -->
-*Screenshot pending*
+<img width="949" height="636" alt="image" src="https://github.com/user-attachments/assets/d8d260b9-d634-41af-b8b3-c995d4a5f8d0" />
+
 
 </details>
 
 </details>
 
 <!-- ![Network Traffic Analyzer](PLACEHOLDER_FOR_TRAFFIC_ANALYZER_IMAGE) -->
-*Screenshot pending*
+<img width="949" height="636" alt="image" src="https://github.com/user-attachments/assets/169c8eea-7bf3-4c99-bc1a-675e246c158f" />
+
 </details>
 </details>
 
@@ -275,8 +278,8 @@ Analyze URLs for phishing and scam indicators using offline heuristics.
 <details>
 <summary> 📸 Screenshot </summary>
 <br>
-<!-- ![URL Scam Scanner](PLACEHOLDER_FOR_URL_SCAM_SCANNER_IMAGE) -->
-*Screenshot pending*
+<img width="658" height="207" alt="image" src="https://github.com/user-attachments/assets/6d29f6c3-7f02-41da-9721-794ea2da72ba" />
+
 </details>
 </details>
 
@@ -293,7 +296,10 @@ Visualize open port risks and vulnerabilities using Plotly.
 <summary> 📸 Screenshot </summary>
 <br>
 <!-- ![Data Visualization](PLACEHOLDER_FOR_DATA_VISUALIZATION_IMAGE) -->
-*Screenshot pending*
+    
+    <img width="965" height="506" alt="Screenshot 2026-03-27 at 7 17 15 PM" src="https://github.com/user-attachments/assets/d87a10a8-af25-45ff-bc51-2a278c17a691" />
+
+
 </details>
 </details>
 ---
