@@ -652,28 +652,44 @@ Both are logged in security_log.txt
 ---
 
 <details>
-<summary> 📦 Dependencies </summary>
+<summary> 📦 Libraries </summary>
 <br>
 
-**Built-in (no install needed):**
-```
-hashlib, os, re, html, string, random, datetime, socket, struct
-```
+**Built-in Libraries (no install needed):**
 
-**Install required:**
-```bash
-pip install streamlit pandas nltk scapy streamlit-keyup streamlit-option-menu cryptography
-```
 
-| Package | Purpose |
-|---------|---------|
-| `streamlit` | Web UI framework |
-| `pandas` | Data handling for tables |
-| `nltk` | Extended dictionary (optional) |
-| `scapy` | Packet capture (Traffic Analyzer) |
-| `streamlit-keyup` | Real-time input detection |
-| `streamlit-option-menu` | Navigation menu |
-| `cryptography` | Encryption features |
+| Library      | Purpose                                 |
+|--------------|-----------------------------------------|
+| `hashlib`    | Hashing and cryptography                |
+| `os`         | Operating system functions              |
+| `re`         | Regular expressions                     |
+| `html`       | HTML handling and escaping              |
+| `string`     | String utilities                        |
+| `random`     | Random number generation                |
+| `datetime`   | Date and time utilities                 |
+| `socket`     | Network connections                     |
+| `struct`     | Binary data packing/unpacking           |
+| `sys`        | System-specific parameters/functions    |
+| `threading`  | Multi-threading support                 |
+| `time`       | Time utilities                          |
+| `platform`   | Platform/OS detection                   |
+| `ipaddress`  | IP address manipulation                 |
+| `subprocess` | Running system commands                 |
+
+**External Libraries / Dependencies (install required):**
+
+
+
+| Package                 | Purpose                              |
+|-------------------------|--------------------------------------|
+| `streamlit`             | Web UI framework                     |
+| `pandas`                | Data handling for tables             |
+| `nltk`                  | Extended dictionary (optional)       |
+| `scapy`                 | Packet capture (Traffic Analyzer)    |
+| `streamlit-keyup`       | Real-time input detection            |
+| `streamlit-option-menu` | Navigation menu                      |
+| `plotly`                | Data visualization                   |
+| `cryptography`          | Encryption features                  |
 
 </details>
 
@@ -690,6 +706,8 @@ pip install streamlit pandas nltk scapy streamlit-keyup streamlit-option-menu cr
 | **MS2 (GUI)** | Feb 1, 2026 | Migrated from Tkinter to Streamlit |
 | **MS2** | Feb 24, 2026 | Added Network Port Scanner, Traffic Analyzer |
 | **MS2-revised** | Mar 2, 2026 | PCAP export, no-limit scanning, pause/resume, BPF filters |
+| **TA** | Mar 24, 2026 | Added URL Expander, URL Scam Scanner, improved test coverage, bug fixes |
+
 
 <details>
 <summary> MS1 Details </summary>
@@ -721,7 +739,20 @@ pip install streamlit pandas nltk scapy streamlit-keyup streamlit-option-menu cr
 - BPF filter support
 
 </details>
+<details>
+<summary> TA Details </summary>
 
+**Terminal Assessment Features (Mar 24, 2026):**
+- URL Expander for revealing the true destination of shortened links
+- URL Scam Scanner for offline phishing and scam detection using heuristic analysis
+
+**Testing & Improvements (Mar 27, 2026):**
+- Verified accurate expansion of TinyURL, Bitly, and invalid links
+- Scam Scanner tested with safe, suspicious, and shortened URLs
+- Added detailed risk factor feedback and color-coded verdicts
+- Enhanced error handling for invalid or unreachable URLs
+
+</details>
 </details>
 
 ---
