@@ -12,7 +12,7 @@ Requirements: Python 3.8+, macOS/Windows/Linux. For network tools, run as admin/
 
 For network features (Traffic Analyzer, Port Scanner), use `sudo` or run as Administrator.
 
-Data & Logs: All logs and password hashes are saved in the `data/` folder.
+Data: Password hashes are saved in the `data/` folder.
 
 <details>
 <summary> 📅 Last Updated </summary>
@@ -438,7 +438,7 @@ MO-IT139_Security_Script_Programming/
 | **Full Name** | Min 2 chars, no numbers, only letters/spaces/hyphens/apostrophes, single-space only |
 | **Email** | RFC 5321 compliant (max 320 chars), valid structure, blocks disposable domains |
 | **Username** | 4–16 chars, starts with letter, no spaces, only letters/numbers/underscores, no consecutive underscores |
-| **Message** | Max 250 chars, blocks SQL keywords & XSS patterns, attack attempts logged to file |
+| **Message** | Max 250 chars, blocks SQL keywords & XSS patterns |
 
 </details>
 
@@ -466,7 +466,7 @@ MO-IT139_Security_Script_Programming/
 - ✓ XSS pattern detection and removal
 - ✓ HTML entity escaping
 - ✓ Disposable email domain blocking
-- ✓ Silent security logging (users see only pass/fail)
+- ✓ Users see only clean pass/fail messages
 
 **URL Scam Scanner**
 - ✓ 8 offline heuristic rules
@@ -490,11 +490,7 @@ Format: `[timestamp] | hash # salt`
 
 **Security Logs (`data/security_log.txt`)**
 
-Format: Timestamped entries with detailed event info
-- Logs attack attempts (SQL injection, XSS, disposable emails)
-- Records sanitization actions
-- Tracks form validation summaries
-- Append mode (audit trail preserved)
+> ⚠️ *Used by the legacy Tkinter GUI only — not active in the Streamlit app.*
 
 </details>
 
